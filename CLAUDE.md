@@ -107,8 +107,8 @@ Variables críticas:
 npm run dev          # Dev server (puerto 5173)
 npm run build        # Build de producción
 npm run preview      # Preview del build
-npm test             # Vitest en modo watch
-npm run test:run     # Vitest una sola pasada
+npm test             # Vitest una sola pasada
+npm run test:watch   # Vitest en modo watch
 npm run test:coverage
 npm run lint         # ESLint + Prettier check
 npm run lint:fix     # Auto-fix
@@ -119,7 +119,7 @@ npm run lint:fix     # Auto-fix
 | Fase | Contenido | Estado |
 |------|-----------|--------|
 | 0 | Setup e infraestructura | ✅ |
-| 1 | Autenticación (login/register + WCA opcional) | — |
+| 1 | Autenticación (login/register + WCA opcional) | ⏳ Siguiente |
 | 2 | Perfiles de usuario | — |
 | 3 | Rankings + leaderboard | — |
 | 4 | Videoconferencia (Agora.io) | — |
