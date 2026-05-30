@@ -118,7 +118,7 @@ npm run lint:fix     # Auto-fix
 
 | Fase | Contenido | Estado |
 |------|-----------|--------|
-| 0 | Setup e infraestructura | ⏳ |
+| 0 | Setup e infraestructura | ✅ |
 | 1 | Autenticación (login/register + WCA opcional) | — |
 | 2 | Perfiles de usuario | — |
 | 3 | Rankings + leaderboard | — |
