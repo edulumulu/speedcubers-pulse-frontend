@@ -2,7 +2,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Navbar } from '../components/ui/Navbar.jsx';
 import { LoginPage } from '../features/auth/LoginPage.jsx';
 import { RegisterPage } from '../features/auth/RegisterPage.jsx';
-import { ProtectedRoute } from './ProtectedRoute.jsx';
 
 function HomePage() {
   return (
