@@ -114,6 +114,19 @@ npm run lint         # ESLint + Prettier check
 npm run lint:fix     # Auto-fix
 ```
 
+## Antes de hacer push
+
+**Siempre** ejecutar en este orden antes de `git push` o abrir un PR:
+
+```bash
+npm run lint          # 0 errores obligatorio
+npm test              # todos los tests deben pasar
+npm run test:coverage # solo antes de abrir PR — verificar umbrales
+```
+
+Si algo falla, corregirlo antes de pushear. El CI lo detectará de todas formas.
+Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
+
 ## Fases del MVP
 
 | Fase | Contenido | Estado |
