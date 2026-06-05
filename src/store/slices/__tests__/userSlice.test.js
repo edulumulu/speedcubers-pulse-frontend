@@ -38,8 +38,8 @@ describe('userSlice reducers', () => {
   it('fetchMe.fulfilled sets me and clears loading', () => {
     const store = makeStore();
     const user = { id: '1', username: 'alice', email: 'alice@test.com' };
-    store.dispatch({ type: fetchMe.fulfilled.type, payload: user });
-    expect(selectMe(store.getState())).toEqual(user);
+    store.dispatch({ type: fetchMe.fulfilled.type, payload: { user, wcaProfile: null } });
+    expect(selectMe(store.getState())).toEqual({ ...user, wcaId: null });
     expect(selectUserLoading(store.getState())).toBe(false);
   });
 
