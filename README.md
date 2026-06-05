@@ -29,8 +29,8 @@ App runs on `http://localhost:5173`
 
 ## 📖 Documentation
 
-- **Architecture & Design**: See [docs/PROJECT_SPEC.md](../speedcubers-pulse-docs/PROJECT_SPEC.md)
-- **Execution Standards**: See [EXECUTION_GUIDE.md](../speedcubers-pulse-docs/EXECUTION_GUIDE.md)
+- **Architecture & Design**: See [SPEEDCUBERS_SPAIN_PROJECT_SPEC.md](../speedcubers-pulse-docs/SPEEDCUBERS_SPAIN_PROJECT_SPEC.md)
+- **Execution Standards**: See [PROFESSIONAL_EXECUTION_GUIDE.md](../speedcubers-pulse-docs/PROFESSIONAL_EXECUTION_GUIDE.md)
 - **UI Components**: See `docs/COMPONENTS.md` (coming soon)
 
 ## ✅ Testing
@@ -76,7 +76,7 @@ src/
 
 ## 🔄 Git Workflow
 
-See [EXECUTION_GUIDE.md](../speedcubers-pulse-docs/EXECUTION_GUIDE.md) for:
+See [PROFESSIONAL_EXECUTION_GUIDE.md](../speedcubers-pulse-docs/PROFESSIONAL_EXECUTION_GUIDE.md) for:
 - Conventional Commits
 - Branch naming
 - Pull Request process
@@ -91,11 +91,11 @@ Production deployment via GitHub Actions on `main` branch with tag `v*`
 
 ## 📋 Roadmap
 
-- Phase 0: Setup ✅
+- Phase 0: Setup ✅ (complete)
 - Phase 1: Authentication (Week 2-3)
 - Phase 2: User Profiles (Week 3.5)
 - Phase 3: Rankings (Week 4)
-- [See full roadmap in PROJECT_SPEC.md](../speedcubers-pulse-docs/PROJECT_SPEC.md#plan-de-fases)
+- [See full roadmap in SPEEDCUBERS_SPAIN_PROJECT_SPEC.md](../speedcubers-pulse-docs/SPEEDCUBERS_SPAIN_PROJECT_SPEC.md#plan-de-fases)
 
 ## 👨‍💻 Contributing
 
