@@ -5,6 +5,7 @@ import { RegisterPage } from '../features/auth/RegisterPage.jsx';
 import { ProfilePage } from '../features/profile/ProfilePage.jsx';
 import { UserProfilePage } from '../features/profile/UserProfilePage.jsx';
 import { ProtectedRoute } from './ProtectedRoute.jsx';
+import { GuestRoute } from './GuestRoute.jsx';
 
 function HomePage() {
   return (
@@ -20,8 +21,8 @@ export function AppRouter() {
       <Navbar />
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
+        <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/users/:username" element={<UserProfilePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
