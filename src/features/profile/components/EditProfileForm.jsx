@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import PropTypes from 'prop-types';
 import { updateMe, selectUserLoading, selectUserError, clearUserError } from '../../../store/slices/userSlice.js';
 import { authService } from '../../../services/authService.js';
 import { selectUser } from '../../../store/slices/authSlice.js';
@@ -146,3 +147,11 @@ export function EditProfileForm({ me }) {
     </form>
   );
 }
+
+EditProfileForm.propTypes = {
+  me: PropTypes.shape({
+    email: PropTypes.string,
+    username: PropTypes.string,
+    wcaId: PropTypes.string,
+  }),
+};

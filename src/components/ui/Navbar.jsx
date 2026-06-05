@@ -1,11 +1,10 @@
 import { Link, NavLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { logout, selectIsAuthenticated, selectUser } from '../../store/slices/authSlice.js';
+import { logout, selectIsAuthenticated } from '../../store/slices/authSlice.js';
 
 export function Navbar() {
   const dispatch = useDispatch();
   const isAuth = useSelector(selectIsAuthenticated);
-  const user = useSelector(selectUser);
 
   return (
     <nav className="flex justify-between items-center px-8 py-4 border-b border-border bg-bg sticky top-0 z-10">

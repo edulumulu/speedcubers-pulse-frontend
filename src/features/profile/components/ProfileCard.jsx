@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types';
+
 export function ProfileCard({ profile }) {
   if (!profile) return null;
 
@@ -7,8 +9,8 @@ export function ProfileCard({ profile }) {
 
   const countryFlag = profile.wca?.countryIso2
     ? profile.wca.countryIso2
-        .toUpperCase()
-        .replace(/./g, (char) => String.fromCodePoint(0x1f1e6 - 65 + char.charCodeAt(0)))
+      .toUpperCase()
+      .replace(/./g, (char) => String.fromCodePoint(0x1f1e6 - 65 + char.charCodeAt(0)))
     : null;
 
   return (
@@ -46,3 +48,16 @@ export function ProfileCard({ profile }) {
     </div>
   );
 }
+
+ProfileCard.propTypes = {
+  profile: PropTypes.shape({
+    username: PropTypes.string,
+    createdAt: PropTypes.string,
+    wcaId: PropTypes.string,
+    wca: PropTypes.shape({
+      countryIso2: PropTypes.string,
+      name: PropTypes.string,
+      country: PropTypes.string,
+    }),
+  }),
+};
