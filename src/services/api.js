@@ -5,8 +5,13 @@ const api = axios.create({
   withCredentials: true,
 });
 
+let _store = null;
+export function injectStore(store) {
+  _store = store;
+}
+
 api.interceptors.request.use((config) => {
-  const token = store.getState?.()?.auth?.accessToken;
+  const token = _store?.getState?.()?.auth?.accessToken;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

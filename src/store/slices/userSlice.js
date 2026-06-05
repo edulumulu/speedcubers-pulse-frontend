@@ -63,7 +63,7 @@ const userSlice = createSlice({
       .addCase(fetchMe.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(fetchMe.fulfilled, (state, action) => {
         state.loading = false;
-        state.me = action.payload;
+        state.me = { ...action.payload.user, wcaId: action.payload.wcaProfile?.wcaId ?? null };
       })
       .addCase(fetchMe.rejected, (state, action) => {
         state.loading = false;
@@ -72,7 +72,7 @@ const userSlice = createSlice({
       .addCase(updateMe.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(updateMe.fulfilled, (state, action) => {
         state.loading = false;
-        state.me = action.payload;
+        state.me = { ...action.payload.user, wcaId: state.me?.wcaId ?? null };
       })
       .addCase(updateMe.rejected, (state, action) => {
         state.loading = false;

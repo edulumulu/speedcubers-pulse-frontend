@@ -76,7 +76,7 @@ export function EditProfileForm({ me }) {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="input"
+          className="form-input"
           required
         />
       </div>
@@ -87,7 +87,7 @@ export function EditProfileForm({ me }) {
           type="text"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className={`input ${usernameError ? 'border-red-500' : ''}`}
+          className={`form-input ${usernameError ? 'border-red-500' : ''}`}
           required
         />
         {usernameError ? (
@@ -103,7 +103,7 @@ export function EditProfileForm({ me }) {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="input"
+          className="form-input"
           placeholder="••••••••"
         />
       </div>
@@ -122,7 +122,7 @@ export function EditProfileForm({ me }) {
               value={wcaInput}
               onChange={(e) => setWcaInput(e.target.value)}
               placeholder="Ej: 2015GOME01"
-              className="input flex-1"
+              className="form-input flex-1 mb-0"
             />
             <button
               type="button"
