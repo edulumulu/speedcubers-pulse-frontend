@@ -2,6 +2,9 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Navbar } from '../components/ui/Navbar.jsx';
 import { LoginPage } from '../features/auth/LoginPage.jsx';
 import { RegisterPage } from '../features/auth/RegisterPage.jsx';
+import { ProfilePage } from '../features/profile/ProfilePage.jsx';
+import { UserProfilePage } from '../features/profile/UserProfilePage.jsx';
+import { ProtectedRoute } from './ProtectedRoute.jsx';
 
 function HomePage() {
   return (
@@ -19,6 +22,8 @@ export function AppRouter() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/users/:username" element={<UserProfilePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

@@ -22,10 +22,10 @@ export function Navbar() {
 
         {isAuth ? (
           <>
-            <NavLink to={`/profile/${user?.username}`} className={({ isActive }) =>
+            <NavLink to="/profile" className={({ isActive }) =>
               `text-sm transition-colors ${isActive ? 'text-[#e2f0ff]' : 'text-muted hover:text-[#e2f0ff]'}`
             }>
-              {user?.username}
+              Mi Perfil
             </NavLink>
             <button
               onClick={() => dispatch(logout())}

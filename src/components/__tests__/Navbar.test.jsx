@@ -21,7 +21,7 @@ describe('Navbar', () => {
         },
       },
     });
-    expect(screen.getByText('edulumulu')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /mi perfil/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /salir/i })).toBeInTheDocument();
   });
 
