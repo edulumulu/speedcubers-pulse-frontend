@@ -72,16 +72,22 @@ GitFlow simplificado:
 src/
   features/<feature>/__tests__/   # Tests junto a la feature
   components/__tests__/           # Tests de componentes compartidos
+e2e/                              # Tests E2E con Playwright (Fase 7)
+  fixtures/                       # Helpers: createUser(), loginAs(), etc.
+  flows/                          # Specs por flujo de usuario
+  playwright.config.ts
 ```
 
 - Tests unitarios con Vitest + React Testing Library
 - No mockear Redux store completo — usar `renderWithProviders` con un store real configurado para tests
 - `msw` para interceptar llamadas HTTP en tests (no mockear axios directamente)
+- **Tests E2E con Playwright** — se añaden en Fase 7, cuando las features principales estén estabilizadas. Ver plan completo en `../speedcubers-pulse-docs/PLAYWRIGHT_E2E_PLAN.md`
 
 Targets:
-- >80% cobertura global
+- >80% cobertura global (Vitest)
 - >95% en lógica de `auth` y `timer`
 - Cada componente nuevo debe tener al menos un test de render
+- Flujos E2E cubiertos: registro/login, vincular WCA, reto 1v1 completo, leaderboard
 
 ## Seguridad (frontend)
 

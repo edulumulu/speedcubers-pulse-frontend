@@ -21,6 +21,7 @@ export default defineConfig({
         'src/test/**',
         '**/__tests__/**',
         '**/*.config.*',
+        'e2e/**',
         'node_modules/**',
       ],
       thresholds: {
