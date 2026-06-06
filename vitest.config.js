@@ -19,6 +19,7 @@ export default defineConfig({
         'src/test/**',
         '**/__tests__/**',
         '**/*.config.*',
+        'e2e/**',
       ],
       thresholds: {
         branches: 75,
