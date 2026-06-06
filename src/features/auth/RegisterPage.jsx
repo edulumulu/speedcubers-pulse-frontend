@@ -14,15 +14,49 @@ export function RegisterPage() {
 
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({ username: '', email: '', password: '', wca_id: '' });
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (isAuth) navigate('/', { replace: true });
     return () => dispatch(clearError());
   }, [isAuth, navigate, dispatch]);
 
+  const validateStep0 = () => {
+    const errs = {};
+    if (!form.username || form.username.length < 2 || form.username.length > 20)
+      errs.username = 'El username debe tener entre 2 y 20 caracteres';
+    else if (!/^[a-zA-Z0-9]+$/.test(form.username))
+      errs.username = 'Solo letras y números, sin espacios';
+    if (!form.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      errs.email = 'Email no válido';
+    if (!form.password || form.password.length < 8)
+      errs.password = 'Mínimo 8 caracteres';
+    else if (!/[A-Z]/.test(form.password))
+      errs.password = 'Debe contener al menos una mayúscula';
+    else if (!/[0-9]/.test(form.password))
+      errs.password = 'Debe contener al menos un número';
+    return errs;
+  };
+
+  const validateStep1 = () => {
+    const errs = {};
+    if (form.wca_id && !/^[0-9]{4}[A-Z]{2,}[0-9]{2}$/.test(form.wca_id))
+      errs.wca_id = 'Formato de WCA ID inválido (ej: 2022LUCA04)';
+    return errs;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (step === 0) { setStep(1); return; }
+    if (step === 0) {
+      const errs = validateStep0();
+      if (Object.keys(errs).length) { setErrors(errs); return; }
+      setErrors({});
+      setStep(1);
+      return;
+    }
+    const errs = validateStep1();
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    setErrors({});
     const payload = { ...form };
     if (!payload.wca_id) delete payload.wca_id;
     dispatch(register(payload));
@@ -58,33 +92,36 @@ export function RegisterPage() {
               <>
                 <label className="form-label">Nombre de usuario</label>
                 <input
-                  className="form-input"
+                  className={`form-input ${errors.username ? 'border-red-500' : ''}`}
                   type="text"
                   placeholder="edulumulu"
                   value={form.username}
-                  onChange={(e) => setForm({ ...form, username: e.target.value })}
+                  onChange={(e) => { setForm({ ...form, username: e.target.value }); setErrors((p) => ({ ...p, username: undefined })); }}
                   required
                   minLength={2}
                   maxLength={20}
                 />
+                {errors.username && <p className="text-xs text-red-400 -mt-3 mb-3">{errors.username}</p>}
                 <label className="form-label">Email</label>
                 <input
-                  className="form-input"
+                  className={`form-input ${errors.email ? 'border-red-500' : ''}`}
                   type="email"
                   placeholder="tu@email.com"
                   value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  onChange={(e) => { setForm({ ...form, email: e.target.value }); setErrors((p) => ({ ...p, email: undefined })); }}
                   required
                 />
+                {errors.email && <p className="text-xs text-red-400 -mt-3 mb-3">{errors.email}</p>}
                 <label className="form-label">Contraseña</label>
                 <input
-                  className="form-input"
+                  className={`form-input ${errors.password ? 'border-red-500' : ''}`}
                   type="password"
                   placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número"
                   value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  onChange={(e) => { setForm({ ...form, password: e.target.value }); setErrors((p) => ({ ...p, password: undefined })); }}
                   required
                 />
+                {errors.password && <p className="text-xs text-red-400 -mt-3 mb-3">{errors.password}</p>}
                 <button className="btn-primary" type="submit">Continuar</button>
               </>
             )}
@@ -99,13 +136,14 @@ export function RegisterPage() {
 
                 <label className="form-label">WCA ID</label>
                 <input
-                  className="form-input"
+                  className={`form-input ${errors.wca_id ? 'border-red-500' : ''}`}
                   type="text"
                   placeholder="2022LUCA04"
                   value={form.wca_id}
-                  onChange={(e) => setForm({ ...form, wca_id: e.target.value.toUpperCase() })}
+                  onChange={(e) => { setForm({ ...form, wca_id: e.target.value.toUpperCase() }); setErrors((p) => ({ ...p, wca_id: undefined })); }}
                   maxLength={12}
                 />
+                {errors.wca_id && <p className="text-xs text-red-400 -mt-3 mb-3">{errors.wca_id}</p>}
 
                 {form.wca_id.length >= 9 && (
                   <div className="mb-5 px-3 py-3 bg-accent/8 border border-accent/15 rounded-lg">
