@@ -2,19 +2,21 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { register, selectAuthLoading, selectAuthError, selectIsAuthenticated, clearError } from '../../store/slices/authSlice.js';
+import { authService } from '../../services/authService.js';
 
 const STEPS = ['Cuenta', 'WCA', 'Listo'];
 
 export function RegisterPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const loading = useSelector(selectAuthLoading);
+  const authLoading = useSelector(selectAuthLoading);
   const error = useSelector(selectAuthError);
   const isAuth = useSelector(selectIsAuthenticated);
 
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({ username: '', email: '', password: '', wca_id: '' });
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isAuth) navigate('/', { replace: true });
@@ -45,13 +47,25 @@ export function RegisterPage() {
     return errs;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (step === 0) {
       const errs = validateStep0();
       if (Object.keys(errs).length) { setErrors(errs); return; }
-      setErrors({});
-      setStep(1);
+      // Check availability
+      setLoading(true);
+      try {
+        const res = await authService.checkAvailability({ username: form.username, email: form.email });
+        const newErrs = {};
+        if (res.username?.taken) newErrs.username = 'Este username ya está en uso';
+        if (res.email?.taken) newErrs.email = 'Este email ya está registrado';
+        if (Object.keys(newErrs).length) { setErrors(newErrs); return; }
+        setStep(1);
+      } catch {
+        setErrors({ general: 'Error de conexión. Inténtalo de nuevo.' });
+      } finally {
+        setLoading(false);
+      }
       return;
     }
     const errs = validateStep1();
@@ -122,7 +136,10 @@ export function RegisterPage() {
                   required
                 />
                 {errors.password && <p className="text-xs text-red-400 -mt-3 mb-3">{errors.password}</p>}
-                <button className="btn-primary" type="submit">Continuar</button>
+                {errors.general && <p className="text-xs text-red-400 mb-3">{errors.general}</p>}
+                <button className="btn-primary" type="submit" disabled={loading}>
+                  {loading ? 'Comprobando...' : 'Continuar'}
+                </button>
               </>
             )}
 
@@ -152,8 +169,8 @@ export function RegisterPage() {
                   </div>
                 )}
 
-                <button className="btn-primary mb-3" type="submit" disabled={loading}>
-                  {loading ? 'Creando cuenta...' : 'Crear cuenta'}
+                <button className="btn-primary mb-3" type="submit" disabled={authLoading}>
+                  {authLoading ? 'Creando cuenta...' : 'Crear cuenta'}
                 </button>
                 <button type="button" className="btn-secondary" onClick={() => {
                   setForm({ ...form, wca_id: '' });

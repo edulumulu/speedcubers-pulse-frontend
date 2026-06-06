@@ -18,6 +18,9 @@ export const authService = {
       headers: { Authorization: `Bearer ${token}` },
     }).then((r) => r.data),
 
+  checkAvailability: (params) =>
+    api.get('/auth/check', { params }).then((r) => r.data),
+
   forgotPassword: (email) =>
     api.post('/auth/forgot-password', { email }).then((r) => r.data),
 
