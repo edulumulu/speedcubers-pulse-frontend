@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { userService } from '../../services/userService.js';
+import { authService } from '../../services/authService.js';
 
 export const fetchProfile = createAsyncThunk('user/fetchProfile', async (username, { rejectWithValue }) => {
   try {
@@ -24,6 +25,15 @@ export const updateMe = createAsyncThunk('user/updateMe', async (data, { getStat
     return await userService.updateMe(data, accessToken);
   } catch (err) {
     return rejectWithValue(err.response?.data?.error || 'Error al actualizar el perfil');
+  }
+});
+
+export const linkWca = createAsyncThunk('user/linkWca', async (wcaId, { getState, rejectWithValue }) => {
+  try {
+    const { accessToken } = getState().auth;
+    return await authService.linkWca(wcaId, accessToken);
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.error || 'Error al vincular el WCA ID');
   }
 });
 
@@ -75,6 +85,17 @@ const userSlice = createSlice({
         state.me = { ...action.payload.user, wcaId: state.me?.wcaId ?? null };
       })
       .addCase(updateMe.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(linkWca.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(linkWca.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.me) {
+          state.me = { ...state.me, wcaId: action.payload.wcaProfile?.wcaId ?? state.me.wcaId };
+        }
+      })
+      .addCase(linkWca.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
