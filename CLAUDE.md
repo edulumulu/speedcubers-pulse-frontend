@@ -120,6 +120,14 @@ npm run lint         # ESLint + Prettier check
 npm run lint:fix     # Auto-fix
 ```
 
+## Convenciones implementadas
+
+- **`injectStore`** (`src/services/api.js`): patrón para evitar importación circular con el store. En `main.jsx` se llama `injectStore(store)` después de crear el store. El interceptor de Axios usa `_store?.getState?.()?.auth?.accessToken`.
+- **`GuestRoute`** (`src/router/GuestRoute.jsx`): redirige a `/` a usuarios ya autenticados (para `/login`, `/register`, `/forgot-password`, `/reset-password`).
+- **Route coverage tests** (`src/components/__tests__/App.test.jsx`): 12 tests que verifican que todas las rutas públicas y protegidas existen. Si se pierden archivos en un merge, los tests fallan inmediatamente.
+- **Forgot/Reset password**: `ForgotPasswordPage` (anti-enumeración, siempre muestra éxito) y `ResetPasswordPage` (lee `?token=` de la URL, valida contraseña + confirmación, redirige a `/login` con mensaje de éxito).
+- **WCA ID inmutable en perfil**: `EditProfileForm` muestra el WCA ID vinculado como solo lectura con icono de candado. Si no hay WCA ID, muestra input con validación de formato antes de llamar al backend.
+
 ## Antes de hacer push
 
 **Siempre** ejecutar en este orden antes de `git push` o abrir un PR:
@@ -138,9 +146,9 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 | Fase | Contenido | Estado |
 |------|-----------|--------|
 | 0 | Setup e infraestructura | ✅ |
-| 1 | Autenticación (login/register + WCA opcional) | ⏳ Siguiente |
-| 2 | Perfiles de usuario | — |
-| 3 | Rankings + leaderboard | — |
+| 1 | Autenticación (login/register + WCA opcional) | ✅ |
+| 2 | Perfiles de usuario | ✅ |
+| 3 | Rankings + leaderboard | ⏳ Siguiente |
 | 4 | Videoconferencia (Agora.io) | — |
 | 5 | Sistema de timing (cliente) | — |
 | 6 | Presencia online | — |
