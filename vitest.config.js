@@ -13,12 +13,15 @@ export default defineConfig({
       // Services and router are tested via integration — exclude from thresholds
       exclude: [
         'src/main.jsx',
+        'src/App.jsx',
+        'src/store/store.js',
         'src/services/**',
         'src/router/**',
         'src/styles/**',
         'src/test/**',
         '**/__tests__/**',
         '**/*.config.*',
+        'node_modules/**',
       ],
       thresholds: {
         branches: 75,

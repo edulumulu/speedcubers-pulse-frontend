@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import authReducer, { clearAuth, clearError, setTokens, selectIsAuthenticated, selectUser } from '../authSlice.js';
+import authReducer, { clearAuth, clearError, setTokens, register, logout, selectIsAuthenticated, selectUser } from '../authSlice.js';
 
 const makeStore = (preloaded = {}) =>
   configureStore({ reducer: { auth: authReducer }, preloadedState: { auth: preloaded } });
@@ -26,6 +26,33 @@ describe('authSlice reducers', () => {
     store.dispatch(setTokens({ accessToken: 'acc', refreshToken: 'ref' }));
     expect(store.getState().auth.accessToken).toBe('acc');
     expect(store.getState().auth.refreshToken).toBe('ref');
+  });
+});
+
+describe('authSlice async thunk reducers', () => {
+  it('register.pending sets loading true and clears error', () => {
+    const store = makeStore({ user: null, accessToken: null, refreshToken: null, loading: false, error: 'old error' });
+    store.dispatch({ type: register.pending.type });
+    const state = store.getState().auth;
+    expect(state.loading).toBe(true);
+    expect(state.error).toBeNull();
+  });
+
+  it('register.rejected sets error and clears loading', () => {
+    const store = makeStore({ user: null, accessToken: null, refreshToken: null, loading: true, error: null });
+    store.dispatch({ type: register.rejected.type, payload: 'Username taken' });
+    const state = store.getState().auth;
+    expect(state.loading).toBe(false);
+    expect(state.error).toBe('Username taken');
+  });
+
+  it('logout.fulfilled clears user and tokens', () => {
+    const store = makeStore({ user: { id: '1' }, accessToken: 'tok', refreshToken: 'ref', loading: false, error: null });
+    store.dispatch({ type: logout.fulfilled.type });
+    const state = store.getState().auth;
+    expect(state.user).toBeNull();
+    expect(state.accessToken).toBeNull();
+    expect(state.refreshToken).toBeNull();
   });
 });
 
