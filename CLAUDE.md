@@ -2,7 +2,7 @@
 
 Red social para speedcubers españoles: competencias 1v1 en tiempo real con videoconferencia, rankings y presencia online. Proyecto de Fin de Master — MVP en 8 semanas.
 
-**Estado actual**: Fase 0 (setup inicial).
+**Estado actual**: Fases 0, 1 y 2 completadas. Próxima: Fase 3 (Rankings + leaderboard).
 
 ## Arquitectura
 
@@ -140,6 +140,14 @@ npm run test:coverage # solo antes de abrir PR — verificar umbrales
 
 Si algo falla, corregirlo antes de pushear. El CI lo detectará de todas formas.
 Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
+
+## Fases del MVP
+
+## Ranking — notas para el leaderboard
+
+- Ordenar por **Elo** (descendente). Mostrar: posición, username, Elo, wins, losses, DNF count, PB, average time.
+- Si el usuario tiene WCA ID vinculado: mostrar su ranking WCA oficial en la categoría del filtro activo. El backend lo devuelve ya resuelto (WCA API + Redis cache 24h).
+- Filtro por evento (por defecto 3x3). El cambio de filtro hace un nuevo fetch al backend.
 
 ## Fases del MVP
 
