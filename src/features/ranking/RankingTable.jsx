@@ -1,5 +1,7 @@
+import PropTypes from 'prop-types';
+
 function fmt(s) {
-  if (s == null) return '—';
+  if (s === null || s === undefined) return '—';
   return `${s.toFixed(2)}s`;
 }
 
@@ -91,6 +93,24 @@ function RankingRow({ row }) {
   );
 }
 
+RankingRow.propTypes = {
+  row: PropTypes.shape({
+    position: PropTypes.number.isRequired,
+    userId: PropTypes.string.isRequired,
+    username: PropTypes.string.isRequired,
+    elo: PropTypes.number.isRequired,
+    wins: PropTypes.number.isRequired,
+    losses: PropTypes.number.isRequired,
+    pb_time: PropTypes.number,
+    average_time: PropTypes.number,
+    wca_id: PropTypes.string,
+    wca_ranking: PropTypes.shape({
+      rank: PropTypes.number,
+      average: PropTypes.number,
+    }),
+  }).isRequired,
+};
+
 export function RankingTable({ rows }) {
   if (!rows.length) {
     return (
@@ -108,3 +128,9 @@ export function RankingTable({ rows }) {
     </div>
   );
 }
+
+RankingTable.propTypes = {
+  rows: PropTypes.arrayOf(PropTypes.shape({
+    userId: PropTypes.string.isRequired,
+  })).isRequired,
+};

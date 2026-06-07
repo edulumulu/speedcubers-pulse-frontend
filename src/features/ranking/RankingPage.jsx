@@ -21,41 +21,47 @@ export function RankingPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Ranking</h1>
-          <p className="text-sm text-muted mt-1">Top 100 speedcubers por Elo</p>
-        </div>
+    <div className="flex flex-col h-[calc(100vh-65px)] max-w-5xl mx-auto w-full px-4">
+      {/* Header fijo — no scrollea */}
+      <div className="shrink-0 border-b border-border/50 py-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">Ranking</h1>
+            <p className="text-sm text-muted">Top 100 speedcubers por Elo</p>
+          </div>
 
-        <div className="flex flex-wrap gap-2">
-          {EVENTS.map((e) => (
-            <button
-              key={e}
-              onClick={() => handleEventChange(e)}
-              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                event === e
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-accent text-muted hover:text-foreground'
-              }`}
-            >
-              {e}
-            </button>
-          ))}
+          <div className="flex flex-wrap gap-2">
+            {EVENTS.map((e) => (
+              <button
+                key={e}
+                onClick={() => handleEventChange(e)}
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  event === e
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-accent text-muted hover:text-foreground'
+                }`}
+              >
+                {e}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {status === 'loading' && (
-        <p className="text-center text-muted text-sm py-12">Cargando ranking…</p>
-      )}
+      {/* Lista — solo esta zona scrollea */}
+      <div className="flex-1 overflow-y-auto py-4">
+        {status === 'loading' && (
+          <p className="text-center text-muted text-sm py-12">Cargando ranking…</p>
+        )}
 
-      {status === 'failed' && (
-        <p className="text-center text-red-400 text-sm py-12">{error}</p>
-      )}
+        {status === 'failed' && (
+          <p className="text-center text-red-400 text-sm py-12">{error}</p>
+        )}
 
-      {status === 'succeeded' && (
-        <RankingTable rows={data} event={event} />
-      )}
+        {status === 'succeeded' && (
+          <RankingTable rows={data} event={event} />
+        )}
+      </div>
     </div>
   );
 }
