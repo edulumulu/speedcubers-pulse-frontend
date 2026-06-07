@@ -6,23 +6,16 @@ import { ForgotPasswordPage } from '../features/auth/ForgotPasswordPage.jsx';
 import { ResetPasswordPage } from '../features/auth/ResetPasswordPage.jsx';
 import { ProfilePage } from '../features/profile/ProfilePage.jsx';
 import { UserProfilePage } from '../features/profile/UserProfilePage.jsx';
+import { RankingPage } from '../features/ranking/RankingPage.jsx';
 import { ProtectedRoute } from './ProtectedRoute.jsx';
 import { GuestRoute } from './GuestRoute.jsx';
-
-function HomePage() {
-  return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-65px)]">
-      <p className="text-muted text-sm">Ranking — próximamente (Fase 3)</p>
-    </div>
-  );
-}
 
 export function AppRouter() {
   return (
     <>
       <Navbar />
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<RankingPage />} />
         <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
         <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
         <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
