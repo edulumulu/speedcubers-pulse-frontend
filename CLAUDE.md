@@ -2,7 +2,7 @@
 
 Red social para speedcubers españoles: competencias 1v1 en tiempo real con videoconferencia, rankings y presencia online. Proyecto de Fin de Master — MVP en 8 semanas.
 
-**Estado actual**: Fases 0, 1 y 2 completadas. Próxima: Fase 3 (Rankings + leaderboard).
+**Estado actual**: Fases 0, 1, 2 y 3 completadas. Próxima: Fase 4 (Videoconferencia Agora.io).
 
 ## Arquitectura
 
@@ -156,7 +156,7 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 | 0 | Setup e infraestructura | ✅ |
 | 1 | Autenticación (login/register + WCA opcional) | ✅ |
 | 2 | Perfiles de usuario | ✅ |
-| 3 | Rankings + leaderboard | ⏳ Siguiente |
+| 3 | Rankings + leaderboard | ✅ |
 | 4 | Videoconferencia (Agora.io) | — |
 | 5 | Sistema de timing (cliente) | — |
 | 6 | Presencia online | — |
