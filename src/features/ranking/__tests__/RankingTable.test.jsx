@@ -10,11 +10,10 @@ const sampleRows = [
     elo: 1247,
     wins: 38,
     losses: 14,
-    dnf_count: 3,
     pb_time: 8.43,
     average_time: 12.7,
     wca_id: '2022TEST01',
-    wca_ranking: { rank: 150, average: 9.5 },
+    wca_ranking: { rank: 32158, average: 11.37 },
   },
   {
     position: 2,
@@ -23,7 +22,6 @@ const sampleRows = [
     elo: 1000,
     wins: 10,
     losses: 10,
-    dnf_count: 0,
     pb_time: null,
     average_time: null,
     wca_id: null,
@@ -33,43 +31,58 @@ const sampleRows = [
 
 describe('RankingTable', () => {
   it('renders empty message when no rows', () => {
-    renderWithProviders(<RankingTable rows={[]} event="3x3" />);
+    renderWithProviders(<RankingTable rows={[]} />);
     expect(screen.getByText(/no hay competidores/i)).toBeInTheDocument();
   });
 
-  it('renders all rows with correct data', () => {
-    renderWithProviders(<RankingTable rows={sampleRows} event="3x3" />);
+  it('renders all rows', () => {
+    renderWithProviders(<RankingTable rows={sampleRows} />);
     expect(screen.getByText('topplayer')).toBeInTheDocument();
     expect(screen.getByText('midplayer')).toBeInTheDocument();
+  });
+
+  it('shows Elo values', () => {
+    renderWithProviders(<RankingTable rows={sampleRows} />);
     expect(screen.getByText('1247')).toBeInTheDocument();
     expect(screen.getByText('1000')).toBeInTheDocument();
   });
 
-  it('shows WCA ID next to username when present', () => {
-    renderWithProviders(<RankingTable rows={sampleRows} event="3x3" />);
-    expect(screen.getByText('(2022TEST01)')).toBeInTheDocument();
+  it('shows WCA ID below username when present', () => {
+    renderWithProviders(<RankingTable rows={sampleRows} />);
+    expect(screen.getByText('2022TEST01')).toBeInTheDocument();
   });
 
-  it('shows WCA ranking badge when wca_ranking is available', () => {
-    renderWithProviders(<RankingTable rows={sampleRows} event="3x3" />);
-    expect(screen.getByText('WCA #150')).toBeInTheDocument();
+  it('shows WCA rank when wca_ranking is available', () => {
+    renderWithProviders(<RankingTable rows={sampleRows} />);
+    expect(screen.getByText('#32,158')).toBeInTheDocument();
   });
 
-  it('formats null pb_time as dash', () => {
-    renderWithProviders(<RankingTable rows={sampleRows} event="3x3" />);
-    // midplayer has null pb_time — two dashes (pb and average)
+  it('shows dash when wca_ranking is null', () => {
+    renderWithProviders(<RankingTable rows={sampleRows} />);
+    const dashes = screen.getAllByText('—');
+    expect(dashes.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('formats pb_time with 2 decimal places', () => {
+    renderWithProviders(<RankingTable rows={sampleRows} />);
+    expect(screen.getByText('8.43s')).toBeInTheDocument();
+  });
+
+  it('shows dash for null pb_time', () => {
+    renderWithProviders(<RankingTable rows={sampleRows} />);
     const dashes = screen.getAllByText('—');
     expect(dashes.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('formats pb_time with 2 decimal places', () => {
-    renderWithProviders(<RankingTable rows={sampleRows} event="3x3" />);
-    expect(screen.getByText('8.43s')).toBeInTheDocument();
-  });
-
-  it('username links to user profile page', () => {
-    renderWithProviders(<RankingTable rows={sampleRows} event="3x3" />);
+  it('username links to user profile', () => {
+    renderWithProviders(<RankingTable rows={sampleRows} />);
     const link = screen.getByRole('link', { name: /topplayer/i });
     expect(link).toHaveAttribute('href', '/users/topplayer');
+  });
+
+  it('shows win/loss chips', () => {
+    renderWithProviders(<RankingTable rows={sampleRows} />);
+    expect(screen.getByText('38V')).toBeInTheDocument();
+    expect(screen.getByText('14D')).toBeInTheDocument();
   });
 });
