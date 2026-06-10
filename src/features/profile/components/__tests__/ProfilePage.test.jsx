@@ -9,6 +9,11 @@ import authReducer from '../../../../store/slices/authSlice.js';
 import userReducer from '../../../../store/slices/userSlice.js';
 import { ProfilePage } from '../../ProfilePage.jsx';
 
+const routerFuture = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+};
+
 // Mock userSlice thunks so they don't make real API calls
 vi.mock('../../../../store/slices/userSlice.js', async (importOriginal) => {
   const actual = await importOriginal();
@@ -38,7 +43,7 @@ function renderProfilePage(preloadedState = {}) {
     store,
     ...render(
       <Provider store={store}>
-        <MemoryRouter>
+        <MemoryRouter future={routerFuture}>
           <ProfilePage />
         </MemoryRouter>
       </Provider>,

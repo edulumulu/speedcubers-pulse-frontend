@@ -4,6 +4,11 @@ import { BrowserRouter } from 'react-router-dom';
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from '../store/slices/authSlice.js';
 
+const routerFuture = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+};
+
 export function renderWithProviders(ui, { preloadedState = {} } = {}) {
   const store = configureStore({
     reducer: { auth: authReducer },
@@ -13,7 +18,7 @@ export function renderWithProviders(ui, { preloadedState = {} } = {}) {
   return {
     ...render(
       <Provider store={store}>
-        <BrowserRouter>{ui}</BrowserRouter>
+        <BrowserRouter future={routerFuture}>{ui}</BrowserRouter>
       </Provider>,
     ),
     store,

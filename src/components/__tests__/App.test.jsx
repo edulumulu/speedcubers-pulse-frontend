@@ -6,6 +6,21 @@ import authReducer from '../../store/slices/authSlice.js';
 import userReducer from '../../store/slices/userSlice.js';
 import rankingReducer from '../../store/slices/rankingSlice.js';
 import { AppRouter } from '../../router/AppRouter.jsx';
+import { vi } from 'vitest';
+
+vi.mock('../../services/userService.js', () => ({
+  userService: {
+    getByUsername: vi.fn(() => new Promise(() => {})),
+    getMe: vi.fn(() => new Promise(() => {})),
+    updateMe: vi.fn(),
+    deleteMe: vi.fn(() => new Promise(() => {})),
+  },
+}));
+
+const routerFuture = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+};
 
 const makeStore = (authOverrides = {}) =>
   configureStore({
@@ -13,14 +28,14 @@ const makeStore = (authOverrides = {}) =>
     preloadedState: {
       auth: { user: null, accessToken: null, refreshToken: null, loading: false, error: null, ...authOverrides },
       user: { profile: null, me: null, loading: false, error: null },
-      ranking: { data: [], event: '3x3', status: 'idle', error: null },
+      ranking: { data: [], event: '3x3', status: 'succeeded', error: null },
     },
   });
 
 const renderAt = (path, authOverrides = {}) =>
   render(
     <Provider store={makeStore(authOverrides)}>
-      <MemoryRouter initialEntries={[path]}>
+      <MemoryRouter initialEntries={[path]} future={routerFuture}>
         <AppRouter />
       </MemoryRouter>
     </Provider>,
