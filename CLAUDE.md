@@ -2,7 +2,7 @@
 
 Red social para speedcubers españoles: competencias 1v1 en tiempo real con videoconferencia, rankings y presencia online. Proyecto de Fin de Master — MVP en 8 semanas.
 
-**Estado actual**: Fases 0, 1, 2 y 3 completadas. Próxima: Fase 4 (Videoconferencia Agora.io).
+**Estado actual**: Fases 0, 1, 2 y 3 completadas. Fase 4 (Videoconferencia Agora.io) en progreso: waiting room y solicitud de token implementadas.
 
 ## Arquitectura
 
@@ -16,6 +16,7 @@ src/
     competition/   # Lobby, match, result
     ranking/       # Leaderboard, stats
     profile/       # User profile, WCA data
+    video/          # Waiting room and Agora token flow
   components/      # Shared UI components (Button, Modal, etc.)
   hooks/           # Shared hooks (useSocket, useAuth, etc.)
   store/           # Redux Toolkit slices + selectors
@@ -36,7 +37,7 @@ src/
 - Tailwind CSS 3 + custom shared components
 - Axios (instancia con interceptors para JWT)
 - Socket.io client 4
-- Agora React SDK (planned Phase 4 videoconference integration)
+- Phase 4 video waiting room + Agora token flow (real RTC SDK integration pending)
 - Vitest + React Testing Library (tests)
 - ESLint + Prettier
 
@@ -127,6 +128,7 @@ npm run lint:fix     # Auto-fix
 - **Route coverage tests** (`src/components/__tests__/App.test.jsx`): 12 tests que verifican que todas las rutas públicas y protegidas existen. Si se pierden archivos en un merge, los tests fallan inmediatamente.
 - **Forgot/Reset password**: `ForgotPasswordPage` (anti-enumeración, siempre muestra éxito) y `ResetPasswordPage` (lee `?token=` de la URL, valida contraseña + confirmación, redirige a `/login` con mensaje de éxito).
 - **WCA ID inmutable en perfil**: `EditProfileForm` muestra el WCA ID vinculado como solo lectura con icono de candado. Si no hay WCA ID, muestra input con validación de formato antes de llamar al backend.
+- **Video waiting room** (`src/features/video/VideoRoomPage.jsx`): ruta protegida `/compete`, solicita token RTC a `POST /video/token` y mantiene estado en `videoSlice`. La publicación de cámara y streams remotos queda pendiente de integrar con el SDK RTC.
 
 ## Antes de hacer push
 
@@ -157,7 +159,7 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 | 1 | Autenticación (login/register + WCA opcional) | ✅ |
 | 2 | Perfiles de usuario | ✅ |
 | 3 | Rankings + leaderboard | ✅ |
-| 4 | Videoconferencia (Agora.io) | — |
+| 4 | Videoconferencia (Agora.io): waiting room + token flow | ⏳ |
 | 5 | Sistema de timing (cliente) | — |
 | 6 | Presencia online | — |
 | 7 | Integración, e2e, polish | — |
