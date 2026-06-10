@@ -51,7 +51,7 @@ Target: >80% coverage
 ## 📦 Tech Stack
 
 - **Framework**: React 18.x
-- **Build Tool**: Vite 5.x
+- **Build Tool**: Vite 7.x
 - **Router**: React Router 6.x
 - **State Management**: Redux Toolkit
 - **HTTP Client**: Axios
