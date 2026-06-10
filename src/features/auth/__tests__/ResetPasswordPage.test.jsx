@@ -16,11 +16,16 @@ import { MemoryRouter } from 'react-router-dom';
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from '../../../store/slices/authSlice.js';
 
+const routerFuture = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+};
+
 function renderPage(initialEntry = '/reset-password') {
   const store = configureStore({ reducer: { auth: authReducer } });
   return render(
     <Provider store={store}>
-      <MemoryRouter initialEntries={[initialEntry]}>
+      <MemoryRouter initialEntries={[initialEntry]} future={routerFuture}>
         <ResetPasswordPage />
       </MemoryRouter>
     </Provider>,
