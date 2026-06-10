@@ -9,6 +9,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  issues: write
 
 env:
   VITE_API_URL: http://localhost:3000/api/v1

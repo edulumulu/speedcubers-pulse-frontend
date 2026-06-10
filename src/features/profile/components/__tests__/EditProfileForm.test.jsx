@@ -9,6 +9,11 @@ import authReducer from '../../../../store/slices/authSlice.js';
 import userReducer from '../../../../store/slices/userSlice.js';
 import { EditProfileForm } from '../EditProfileForm.jsx';
 
+const routerFuture = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+};
+
 // Mock authService so linkWca doesn't hit the network
 vi.mock('../../../../services/authService.js', () => ({
   authService: {
@@ -38,7 +43,7 @@ function renderForm(me) {
     store,
     ...render(
       <Provider store={store}>
-        <BrowserRouter>
+        <BrowserRouter future={routerFuture}>
           <EditProfileForm me={me} />
         </BrowserRouter>
       </Provider>,
