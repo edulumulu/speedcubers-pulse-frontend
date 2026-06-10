@@ -33,10 +33,10 @@ src/
 - React 18 + Vite 5
 - Redux Toolkit (RTK Query para llamadas a la API)
 - React Router 6
-- Tailwind CSS 3 + Shadcn/ui
+- Tailwind CSS 3 + custom shared components
 - Axios (instancia con interceptors para JWT)
 - Socket.io client 4
-- Agora React SDK (videoconferencia)
+- Agora React SDK (planned Phase 4 videoconference integration)
 - Vitest + React Testing Library (tests)
 - ESLint + Prettier
 
