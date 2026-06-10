@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import authReducer from '../../store/slices/authSlice.js';
 import userReducer from '../../store/slices/userSlice.js';
 import rankingReducer from '../../store/slices/rankingSlice.js';
+import videoReducer from '../../store/slices/videoSlice.js';
 import { AppRouter } from '../../router/AppRouter.jsx';
 import { vi } from 'vitest';
 
@@ -24,11 +25,12 @@ const routerFuture = {
 
 const makeStore = (authOverrides = {}) =>
   configureStore({
-    reducer: { auth: authReducer, user: userReducer, ranking: rankingReducer },
+    reducer: { auth: authReducer, user: userReducer, ranking: rankingReducer, video: videoReducer },
     preloadedState: {
       auth: { user: null, accessToken: null, refreshToken: null, loading: false, error: null, ...authOverrides },
       user: { profile: null, me: null, loading: false, error: null },
       ranking: { data: [], event: '3x3', status: 'succeeded', error: null },
+      video: { room: null, status: 'idle', error: null },
     },
   });
 
@@ -86,6 +88,11 @@ describe('protected routes — unauthenticated', () => {
     renderAt('/profile');
     expect(screen.getByRole('heading', { name: /bienvenido/i })).toBeInTheDocument();
   });
+
+  it('/compete redirects to /login when not authenticated', () => {
+    renderAt('/compete');
+    expect(screen.getByRole('heading', { name: /bienvenido/i })).toBeInTheDocument();
+  });
 });
 
 // Protected routes (authenticated)
@@ -95,6 +102,11 @@ describe('protected routes — authenticated', () => {
   it('/profile renders profile page when authenticated', () => {
     renderAt('/profile', authUser);
     expect(screen.getByRole('heading', { name: /mi perfil/i })).toBeInTheDocument();
+  });
+
+  it('/compete renders video room page when authenticated', () => {
+    renderAt('/compete', authUser);
+    expect(screen.getByRole('heading', { name: /sala de video/i })).toBeInTheDocument();
   });
 
   it('/login redirects to / when already authenticated', () => {
