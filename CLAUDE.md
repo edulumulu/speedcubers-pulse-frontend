@@ -31,7 +31,7 @@ src/
 
 ## Stack
 
-- React 18 + Vite 5
+- React 18 + Vite 7
 - Redux Toolkit (RTK Query para llamadas a la API)
 - React Router 6
 - Tailwind CSS 3 + custom shared components
