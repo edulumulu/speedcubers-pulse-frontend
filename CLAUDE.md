@@ -2,7 +2,7 @@
 
 Red social para speedcubers españoles: competencias 1v1 en tiempo real con videoconferencia, rankings y presencia online. Proyecto de Fin de Master — MVP en 8 semanas.
 
-**Estado actual**: Fases 0, 1, 2 y 3 completadas. Fase 4 (Videoconferencia Agora.io) en progreso: waiting room, solicitud de token y conexión RTC real implementadas.
+**Estado actual**: Fases 0, 1, 2 y 3 completadas. Fase 4C (salas de competición con Agora.io) en progreso: creación/unión por código, solicitud de token y conexión RTC real implementadas.
 
 ## Arquitectura
 
@@ -25,7 +25,7 @@ src/
   utils/           # Pure helpers
 ```
 
-**Redux Toolkit** para estado global (auth, ranking, presence). Estado local de componentes con `useState`/`useReducer`. No mezclar: si el estado no se comparte entre features, va local.
+**Redux Toolkit** para estado global (auth, ranking, competition, video, presence). Estado local de componentes con `useState`/`useReducer`. No mezclar: si el estado no se comparte entre features, va local.
 
 **Decisión crítica**: el timer corre 100% en el cliente. El resultado se envía al backend al terminar. El servidor solo valida el rango (0–600s) — no confiar en respuestas del servidor para el tick del timer.
 
@@ -128,7 +128,7 @@ npm run lint:fix     # Auto-fix
 - **Route coverage tests** (`src/components/__tests__/App.test.jsx`): 12 tests que verifican que todas las rutas públicas y protegidas existen. Si se pierden archivos en un merge, los tests fallan inmediatamente.
 - **Forgot/Reset password**: `ForgotPasswordPage` (anti-enumeración, siempre muestra éxito) y `ResetPasswordPage` (lee `?token=` de la URL, valida contraseña + confirmación, redirige a `/login` con mensaje de éxito).
 - **WCA ID inmutable en perfil**: `EditProfileForm` muestra el WCA ID vinculado como solo lectura con icono de candado. Si no hay WCA ID, muestra input con validación de formato antes de llamar al backend.
-- **Video room** (`src/features/video/VideoRoomPage.jsx`): ruta protegida `/compete`, solicita token RTC a `POST /video/token`, entra al canal con Agora Web SDK, publica cámara/micrófono, renderiza preview local y stream remoto, y limpia tracks al salir.
+- **Video room** (`src/features/video/VideoRoomPage.jsx`): ruta protegida `/compete`, crea o une sala mediante `competitionService`, solicita token RTC a `POST /video/token` con el `channelName` de backend, entra al canal con Agora Web SDK, publica cámara/micrófono, renderiza preview local y stream remoto, y limpia tracks al salir.
 
 ## Antes de hacer push
 
@@ -159,7 +159,7 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 | 1 | Autenticación (login/register + WCA opcional) | ✅ |
 | 2 | Perfiles de usuario | ✅ |
 | 3 | Rankings + leaderboard | ✅ |
-| 4 | Videoconferencia (Agora.io): waiting room + RTC flow | ⏳ |
+| 4C | Salas de competición con Agora.io: crear/unirse por código + RTC flow | ⏳ |
 | 5 | Sistema de timing (cliente) | — |
 | 6 | Presencia online | — |
 | 7 | Integración, e2e, polish | — |

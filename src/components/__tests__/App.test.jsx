@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import authReducer from '../../store/slices/authSlice.js';
 import userReducer from '../../store/slices/userSlice.js';
 import rankingReducer from '../../store/slices/rankingSlice.js';
+import competitionReducer from '../../store/slices/competitionSlice.js';
 import videoReducer from '../../store/slices/videoSlice.js';
 import { AppRouter } from '../../router/AppRouter.jsx';
 import { vi } from 'vitest';
@@ -25,11 +26,18 @@ const routerFuture = {
 
 const makeStore = (authOverrides = {}) =>
   configureStore({
-    reducer: { auth: authReducer, user: userReducer, ranking: rankingReducer, video: videoReducer },
+    reducer: {
+      auth: authReducer,
+      user: userReducer,
+      ranking: rankingReducer,
+      competition: competitionReducer,
+      video: videoReducer,
+    },
     preloadedState: {
       auth: { user: null, accessToken: null, refreshToken: null, loading: false, error: null, ...authOverrides },
       user: { profile: null, me: null, loading: false, error: null },
       ranking: { data: [], event: '3x3', status: 'succeeded', error: null },
+      competition: { room: null, status: 'idle', error: null },
       video: { room: null, status: 'idle', error: null },
     },
   });
