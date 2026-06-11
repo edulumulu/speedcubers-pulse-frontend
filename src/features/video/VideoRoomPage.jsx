@@ -7,6 +7,7 @@ import {
   selectVideoRoom,
   selectVideoStatus,
 } from '../../store/slices/videoSlice.js';
+import { useAgoraRoom } from './useAgoraRoom.js';
 
 function createDefaultChannel() {
   return `match-${Date.now().toString(36)}`;
@@ -19,9 +20,20 @@ export function VideoRoomPage() {
   const error = useSelector(selectVideoError);
   const defaultChannel = useMemo(createDefaultChannel, []);
   const [channelName, setChannelName] = useState(defaultChannel);
+  const {
+    localVideoRef,
+    remoteUsers,
+    rtcStatus,
+    rtcError,
+    bindRemoteVideo,
+    leaveRtcRoom,
+  } = useAgoraRoom(room);
 
   const isLoading = status === 'loading';
   const isReady = status === 'ready' && room;
+  const isJoiningRtc = rtcStatus === 'joining';
+  const isConnectedRtc = rtcStatus === 'connected';
+  const visibleError = error || rtcError;
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -30,8 +42,16 @@ export function VideoRoomPage() {
     dispatch(requestVideoToken({ channelName: nextChannelName }));
   }
 
-  function handleLeave() {
+  async function handleLeave() {
+    await leaveRtcRoom();
     dispatch(leaveVideoRoom());
+  }
+
+  function rtcStatusLabel() {
+    if (rtcStatus === 'joining') return 'Conectando RTC';
+    if (rtcStatus === 'connected') return remoteUsers.length ? 'Rival conectado' : 'En directo';
+    if (rtcStatus === 'failed') return 'Error RTC';
+    return isReady ? 'Token listo' : 'Waiting room';
   }
 
   return (
@@ -56,9 +76,9 @@ export function VideoRoomPage() {
               required
             />
 
-            {error && (
+            {visibleError && (
               <div className="mb-5 px-3 py-2.5 bg-red-400/10 border border-red-400/20 rounded-md text-red-400 text-sm">
-                {error}
+                {visibleError}
               </div>
             )}
 
@@ -80,30 +100,57 @@ export function VideoRoomPage() {
                   {isReady ? room.channelName : 'Esperando token de video'}
                 </h2>
                 <p className="text-xs text-muted">
-                  {isReady ? 'Token listo para conectar el cliente RTC.' : 'Solicita un token para abrir la sala.'}
+                  {isConnectedRtc
+                    ? 'Cámara y micrófono conectados al canal.'
+                    : isJoiningRtc
+                      ? 'Pidiendo permisos y entrando al canal.'
+                      : isReady
+                        ? 'Token listo para conectar el cliente RTC.'
+                        : 'Solicita un token para abrir la sala.'}
                 </p>
               </div>
-              <span className={isReady ? 'badge-green' : 'badge-cyan'}>
-                {isReady ? 'Lista' : 'Waiting room'}
+              <span className={isConnectedRtc ? 'badge-green' : 'badge-cyan'}>
+                {rtcStatusLabel()}
               </span>
             </div>
 
             <div className="grid md:grid-cols-2 gap-3 p-4">
-              <div className="aspect-video rounded-md border border-border-light bg-bg flex items-center justify-center">
-                <div className="text-center px-4">
-                  <p className="text-sm font-medium text-[#e2f0ff]">Tu cámara</p>
-                  <p className="text-xs text-muted mt-1">
-                    {isReady ? 'Preparada para publicar video local.' : 'Se activará al entrar en la sala.'}
-                  </p>
-                </div>
+              <div className="aspect-video rounded-md border border-border-light bg-bg overflow-hidden relative">
+                <div ref={localVideoRef} className="absolute inset-0" data-testid="local-video" />
+                {!isConnectedRtc && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center px-4">
+                      <p className="text-sm font-medium text-[#e2f0ff]">Tu cámara</p>
+                      <p className="text-xs text-muted mt-1">
+                        {isJoiningRtc ? 'Activando cámara y micrófono.' : 'Se activará al entrar en la sala.'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {isConnectedRtc && (
+                  <span className="absolute left-3 top-3 badge-green">Tú</span>
+                )}
               </div>
-              <div className="aspect-video rounded-md border border-border-light bg-bg flex items-center justify-center">
-                <div className="text-center px-4">
-                  <p className="text-sm font-medium text-[#e2f0ff]">Rival</p>
-                  <p className="text-xs text-muted mt-1">
-                    {isReady ? 'Esperando a que el otro cuber se una.' : 'Aún no hay canal activo.'}
-                  </p>
-                </div>
+              <div className="aspect-video rounded-md border border-border-light bg-bg overflow-hidden relative">
+                {remoteUsers[0] ? (
+                  <>
+                    <div
+                      ref={(element) => bindRemoteVideo(remoteUsers[0].uid, element)}
+                      className="absolute inset-0"
+                      data-testid="remote-video"
+                    />
+                    <span className="absolute left-3 top-3 badge-green">Rival #{remoteUsers[0].uid}</span>
+                  </>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center px-4">
+                      <p className="text-sm font-medium text-[#e2f0ff]">Rival</p>
+                      <p className="text-xs text-muted mt-1">
+                        {isConnectedRtc ? 'Esperando a que el otro cuber se una.' : 'Aún no hay canal activo.'}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

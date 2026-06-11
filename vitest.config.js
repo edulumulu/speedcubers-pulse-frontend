@@ -23,6 +23,8 @@ export default defineConfig({
         '**/*.config.*',
         'e2e/**',
         'node_modules/**',
+        'dist/**',
+        'coverage/**',
       ],
       thresholds: {
         branches: 75,
