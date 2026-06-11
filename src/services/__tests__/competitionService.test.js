@@ -4,6 +4,7 @@ import { competitionService } from '../competitionService.js';
 
 vi.mock('../api.js', () => ({
   default: {
+    get: vi.fn(),
     post: vi.fn(),
   },
 }));
@@ -28,6 +29,9 @@ describe('competitionService', () => {
       id: 'room-1',
       code: 'ABC123',
       channelName: 'match-test',
+      status: 'waiting',
+      host: null,
+      guest: null,
     });
     expect(api.post).toHaveBeenCalledWith('/competitions');
   });
@@ -38,6 +42,7 @@ describe('competitionService', () => {
         id: 'room-2',
         code: 'XYZ789',
         channelName: 'match-two',
+        status: 'active',
       },
     });
 
@@ -45,7 +50,50 @@ describe('competitionService', () => {
       id: 'room-2',
       code: 'XYZ789',
       channelName: 'match-two',
+      status: 'active',
+      host: null,
+      guest: null,
     });
     expect(api.post).toHaveBeenCalledWith('/competitions/join', { code: 'XYZ789' });
+  });
+
+  it('gets a competition room by code', async () => {
+    api.get.mockResolvedValueOnce({
+      data: {
+        competition: {
+          id: 'room-2',
+          code: 'XYZ789',
+          channelName: 'match-two',
+          status: 'active',
+        },
+      },
+    });
+
+    await expect(competitionService.getRoom({ code: 'XYZ789' })).resolves.toEqual({
+      id: 'room-2',
+      code: 'XYZ789',
+      channelName: 'match-two',
+      status: 'active',
+      host: null,
+      guest: null,
+    });
+    expect(api.get).toHaveBeenCalledWith('/competitions/XYZ789');
+  });
+
+  it('submits a competition result and unwraps the result payload', async () => {
+    const result = {
+      id: 'result-1',
+      timeMs: 12345,
+      penalty: '+2',
+    };
+    api.post.mockResolvedValueOnce({ data: { result } });
+
+    await expect(
+      competitionService.submitResult({ code: 'ABC123', timeMs: 12345, penalty: '+2' }),
+    ).resolves.toEqual(result);
+    expect(api.post).toHaveBeenCalledWith('/competitions/ABC123/results', {
+      timeMs: 12345,
+      penalty: '+2',
+    });
   });
 });

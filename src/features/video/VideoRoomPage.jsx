@@ -1,12 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   createCompetitionRoom,
   joinCompetitionRoom,
   leaveCompetitionRoom,
+  refreshCompetitionRoom,
   selectCompetitionError,
+  selectCompetitionResult,
+  selectCompetitionResultError,
+  selectCompetitionResultStatus,
   selectCompetitionRoom,
   selectCompetitionStatus,
+  submitCompetitionResult,
 } from '../../store/slices/competitionSlice.js';
 import {
   leaveVideoRoom,
@@ -15,6 +20,7 @@ import {
   selectVideoRoom,
   selectVideoStatus,
 } from '../../store/slices/videoSlice.js';
+import { CompetitionTimerPanel } from '../timer/CompetitionTimerPanel.jsx';
 import { useAgoraRoom } from './useAgoraRoom.js';
 
 export function VideoRoomPage() {
@@ -22,6 +28,9 @@ export function VideoRoomPage() {
   const competitionRoom = useSelector(selectCompetitionRoom);
   const competitionStatus = useSelector(selectCompetitionStatus);
   const competitionError = useSelector(selectCompetitionError);
+  const competitionResult = useSelector(selectCompetitionResult);
+  const competitionResultStatus = useSelector(selectCompetitionResultStatus);
+  const competitionResultError = useSelector(selectCompetitionResultError);
   const room = useSelector(selectVideoRoom);
   const status = useSelector(selectVideoStatus);
   const error = useSelector(selectVideoError);
@@ -43,6 +52,17 @@ export function VideoRoomPage() {
   const hasCompetitionRoom = Boolean(competitionRoom);
   const controlsDisabled = isLoading || hasCompetitionRoom;
   const roomCode = competitionRoom?.code;
+  const isCompetitionActive = competitionRoom?.status === 'active';
+
+  useEffect(() => {
+    if (!roomCode || isCompetitionActive) return undefined;
+
+    const intervalId = window.setInterval(() => {
+      dispatch(refreshCompetitionRoom({ code: roomCode }));
+    }, 5000);
+
+    return () => window.clearInterval(intervalId);
+  }, [dispatch, isCompetitionActive, roomCode]);
 
   async function openVideoRoom(roomAction) {
     try {
@@ -69,6 +89,21 @@ export function VideoRoomPage() {
     await leaveRtcRoom();
     dispatch(leaveVideoRoom());
     dispatch(leaveCompetitionRoom());
+  }
+
+  async function handleSubmitResult({ timeMs, penalty }) {
+    if (!roomCode) return;
+
+    try {
+      await dispatch(submitCompetitionResult({ code: roomCode, timeMs, penalty })).unwrap();
+    } catch {
+      // The rejected thunk stores the visible error in Redux.
+    }
+  }
+
+  function handleRefreshRoom() {
+    if (!roomCode) return;
+    dispatch(refreshCompetitionRoom({ code: roomCode }));
   }
 
   function rtcStatusLabel() {
@@ -215,6 +250,29 @@ export function VideoRoomPage() {
             )}
           </div>
         </section>
+
+        {hasCompetitionRoom && !isCompetitionActive && (
+          <section className="border border-border bg-surface rounded-lg p-4">
+            <p className="form-label mb-1">Timer local</p>
+            <h2 className="text-base font-semibold">Esperando rival</h2>
+            <p className="text-sm text-muted mt-1">
+              El cronómetro se activa cuando otro cuber entra con el código de sala.
+            </p>
+            <button className="btn-secondary mt-4" type="button" onClick={handleRefreshRoom}>
+              Actualizar sala
+            </button>
+          </section>
+        )}
+
+        {hasCompetitionRoom && isCompetitionActive && (
+          <CompetitionTimerPanel
+            roomCode={roomCode}
+            onSubmit={handleSubmitResult}
+            submitStatus={competitionResultStatus}
+            submitError={competitionResultError}
+            submittedResult={competitionResult}
+          />
+        )}
       </div>
     </main>
   );
