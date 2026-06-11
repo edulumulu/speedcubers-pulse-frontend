@@ -5,10 +5,19 @@ import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import authReducer from '../../../store/slices/authSlice.js';
+import competitionReducer from '../../../store/slices/competitionSlice.js';
 import videoReducer from '../../../store/slices/videoSlice.js';
-import { VideoRoomPage } from '../VideoRoomPage.jsx';
+import { competitionService } from '../../../services/competitionService.js';
 import { videoService } from '../../../services/videoService.js';
+import { VideoRoomPage } from '../VideoRoomPage.jsx';
 import { useAgoraRoom } from '../useAgoraRoom.js';
+
+vi.mock('../../../services/competitionService.js', () => ({
+  competitionService: {
+    createRoom: vi.fn(),
+    joinRoom: vi.fn(),
+  },
+}));
 
 vi.mock('../../../services/videoService.js', () => ({
   videoService: {
@@ -23,6 +32,12 @@ vi.mock('../useAgoraRoom.js', () => ({
 const routerFuture = {
   v7_startTransition: true,
   v7_relativeSplatPath: true,
+};
+
+const competitionRoom = {
+  id: 'room-1',
+  code: 'ABC123',
+  channelName: 'match-test',
 };
 
 const readyRoom = {
@@ -49,10 +64,11 @@ function mockAgoraRoomState(overrides = {}) {
   };
 }
 
-function renderVideoRoom({ preloadedVideo } = {}) {
+function renderVideoRoom({ preloadedCompetition, preloadedVideo } = {}) {
   const store = configureStore({
     reducer: {
       auth: authReducer,
+      competition: competitionReducer,
       video: videoReducer,
     },
     preloadedState: {
@@ -63,6 +79,7 @@ function renderVideoRoom({ preloadedVideo } = {}) {
         loading: false,
         error: null,
       },
+      competition: preloadedCompetition ?? { room: null, status: 'idle', error: null },
       video: preloadedVideo ?? { room: null, status: 'idle', error: null },
     },
   });
@@ -89,37 +106,42 @@ describe('VideoRoomPage', () => {
     useAgoraRoom.mockImplementation(() => agoraRoomState);
   });
 
-  it('renders local and remote placeholders before joining an Agora room', () => {
+  it('renders create and join controls before entering a competition room', () => {
     renderVideoRoom();
 
-    expect(screen.getByText('Esperando token de video')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /crear sala/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/código de sala/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /unirse con código/i })).toBeInTheDocument();
+    expect(screen.getByText('Esperando sala de competencia')).toBeInTheDocument();
     expect(screen.getByText('Tu cámara')).toBeInTheDocument();
     expect(screen.getByText('Rival')).toBeInTheDocument();
-    expect(screen.getByText('Se activará al entrar en la sala.')).toBeInTheDocument();
-    expect(screen.getByText('Aún no hay canal activo.')).toBeInTheDocument();
+    expect(screen.getByText('Crea una sala o únete con un código.')).toBeInTheDocument();
   });
 
-  it('requests a video token and renders the Agora room as ready after join', async () => {
+  it('creates a competition room and requests a video token for its channel', async () => {
+    competitionService.createRoom.mockResolvedValueOnce(competitionRoom);
     videoService.requestToken.mockResolvedValueOnce(readyRoom);
     mockAgoraRoomState({ rtcStatus: 'connected' });
 
     const { user, store } = renderVideoRoom();
 
-    await user.clear(screen.getByLabelText(/canal/i));
-    await user.type(screen.getByLabelText(/canal/i), 'match-test');
-    await user.click(screen.getByRole('button', { name: /solicitar token/i }));
+    await user.click(screen.getByRole('button', { name: /crear sala/i }));
 
     await waitFor(() => {
+      expect(competitionService.createRoom).toHaveBeenCalledTimes(1);
       expect(videoService.requestToken).toHaveBeenCalledWith({ channelName: 'match-test' });
     });
-    expect(await screen.findByText('match-test')).toBeInTheDocument();
-    expect(screen.getByText('Cámara y micrófono conectados al canal.')).toBeInTheDocument();
+    expect(await screen.findByText('Sala ABC123')).toBeInTheDocument();
+    expect(screen.getByText('Cámara y micrófono conectados a la sala.')).toBeInTheDocument();
     expect(screen.getByText('En directo')).toBeInTheDocument();
-    expect(screen.getByText('agora-app')).toBeInTheDocument();
+    expect(screen.getByText('match-test')).toBeInTheDocument();
     expect(screen.getByText('42')).toBeInTheDocument();
-    expect(screen.getByText('2026-06-10T12:00:00.000Z')).toBeInTheDocument();
-    expect(screen.getByText('Esperando a que el otro cuber se una.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /salir de la sala/i })).toBeInTheDocument();
+    expect(store.getState().competition).toEqual({
+      room: competitionRoom,
+      status: 'ready',
+      error: null,
+    });
     expect(store.getState().video).toEqual({
       room: readyRoom,
       status: 'ready',
@@ -127,23 +149,61 @@ describe('VideoRoomPage', () => {
     });
   });
 
-  it('leaves the Agora room and resets the waiting room state', async () => {
+  it('joins with an uppercased room code and requests the joined room token', async () => {
+    competitionService.joinRoom.mockResolvedValueOnce(competitionRoom);
     videoService.requestToken.mockResolvedValueOnce(readyRoom);
-    mockAgoraRoomState({ rtcStatus: 'connected' });
+
+    const { user } = renderVideoRoom();
+
+    await user.type(screen.getByLabelText(/código de sala/i), 'abc123');
+    await user.click(screen.getByRole('button', { name: /unirse con código/i }));
+
+    await waitFor(() => {
+      expect(competitionService.joinRoom).toHaveBeenCalledWith({ code: 'ABC123' });
+      expect(videoService.requestToken).toHaveBeenCalledWith({ channelName: 'match-test' });
+    });
+    expect(await screen.findByText('Sala ABC123')).toBeInTheDocument();
+  });
+
+  it('does not request a video token when the competition response has no channel', async () => {
+    competitionService.createRoom.mockResolvedValueOnce({
+      id: 'room-1',
+      code: 'ABC123',
+      channelName: '',
+    });
 
     const { user, store } = renderVideoRoom();
 
-    await user.clear(screen.getByLabelText(/canal/i));
-    await user.type(screen.getByLabelText(/canal/i), 'match-test');
-    await user.click(screen.getByRole('button', { name: /solicitar token/i }));
-    await screen.findByRole('button', { name: /salir de la sala/i });
+    await user.click(screen.getByRole('button', { name: /crear sala/i }));
+
+    expect(await screen.findByText('Sala ABC123')).toBeInTheDocument();
+    expect(screen.getByText('Sala creada')).toBeInTheDocument();
+    expect(videoService.requestToken).not.toHaveBeenCalled();
+    expect(store.getState().video).toEqual({
+      room: null,
+      status: 'idle',
+      error: null,
+    });
+  });
+
+  it('leaves the RTC room and resets competition and video state', async () => {
+    mockAgoraRoomState({ rtcStatus: 'connected' });
+
+    const { user, store } = renderVideoRoom({
+      preloadedCompetition: { room: competitionRoom, status: 'ready', error: null },
+      preloadedVideo: { room: readyRoom, status: 'ready', error: null },
+    });
 
     await user.click(screen.getByRole('button', { name: /salir de la sala/i }));
 
     expect(leaveRtcRoom).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('Esperando token de video')).toBeInTheDocument();
-    expect(screen.queryByText('agora-app')).not.toBeInTheDocument();
+    expect(screen.getByText('Esperando sala de competencia')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /salir de la sala/i })).not.toBeInTheDocument();
+    expect(store.getState().competition).toEqual({
+      room: null,
+      status: 'idle',
+      error: null,
+    });
     expect(store.getState().video).toEqual({
       room: null,
       status: 'idle',
@@ -157,7 +217,10 @@ describe('VideoRoomPage', () => {
       rtcStatus: 'connected',
     });
 
-    renderVideoRoom({ preloadedVideo: { room: readyRoom, status: 'ready', error: null } });
+    renderVideoRoom({
+      preloadedCompetition: { room: competitionRoom, status: 'ready', error: null },
+      preloadedVideo: { room: readyRoom, status: 'ready', error: null },
+    });
 
     expect(screen.getByText('Rival conectado')).toBeInTheDocument();
     expect(screen.getByText('Rival #7')).toBeInTheDocument();
@@ -165,22 +228,22 @@ describe('VideoRoomPage', () => {
     expect(bindRemoteVideo).toHaveBeenCalledWith(7, expect.any(HTMLDivElement));
   });
 
-  it('shows permission or join errors when entering the Agora room fails', async () => {
-    videoService.requestToken.mockRejectedValueOnce({
-      response: { data: { error: 'No se pudo acceder a la cámara o micrófono' } },
+  it('shows competition errors when create or join fails', async () => {
+    competitionService.createRoom.mockRejectedValueOnce({
+      response: { data: { error: 'No se pudo crear la sala' } },
     });
 
     const { user, store } = renderVideoRoom();
 
-    await user.click(screen.getByRole('button', { name: /solicitar token/i }));
+    await user.click(screen.getByRole('button', { name: /crear sala/i }));
 
-    expect(await screen.findByText('No se pudo acceder a la cámara o micrófono')).toBeInTheDocument();
-    expect(screen.getByText('Esperando token de video')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /salir de la sala/i })).not.toBeInTheDocument();
-    expect(store.getState().video).toEqual({
+    expect(await screen.findByText('No se pudo crear la sala')).toBeInTheDocument();
+    expect(screen.getByText('Esperando sala de competencia')).toBeInTheDocument();
+    expect(videoService.requestToken).not.toHaveBeenCalled();
+    expect(store.getState().competition).toEqual({
       room: null,
       status: 'failed',
-      error: 'No se pudo acceder a la cámara o micrófono',
+      error: 'No se pudo crear la sala',
     });
   });
 });
