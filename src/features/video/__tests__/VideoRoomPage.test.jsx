@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import authReducer from '../../../store/slices/authSlice.js';
 import competitionReducer from '../../../store/slices/competitionSlice.js';
 import videoReducer from '../../../store/slices/videoSlice.js';
@@ -15,7 +15,9 @@ import { useAgoraRoom } from '../useAgoraRoom.js';
 vi.mock('../../../services/competitionService.js', () => ({
   competitionService: {
     createRoom: vi.fn(),
+    getRoom: vi.fn(),
     joinRoom: vi.fn(),
+    submitResult: vi.fn(),
   },
 }));
 
@@ -38,6 +40,15 @@ const competitionRoom = {
   id: 'room-1',
   code: 'ABC123',
   channelName: 'match-test',
+  status: 'active',
+  host: { id: '1', username: 'edulumulu' },
+  guest: { id: '2', username: 'rival' },
+};
+
+const waitingCompetitionRoom = {
+  ...competitionRoom,
+  status: 'waiting',
+  guest: null,
 };
 
 const readyRoom = {
@@ -46,6 +57,24 @@ const readyRoom = {
   token: 'rtc-token',
   uid: 42,
   expiresAt: '2026-06-10T12:00:00.000Z',
+};
+
+const idleCompetitionState = {
+  room: null,
+  status: 'idle',
+  error: null,
+  result: null,
+  resultStatus: 'idle',
+  resultError: null,
+};
+
+const readyCompetitionState = {
+  room: competitionRoom,
+  status: 'ready',
+  error: null,
+  result: null,
+  resultStatus: 'idle',
+  resultError: null,
 };
 
 let bindRemoteVideo;
@@ -79,7 +108,7 @@ function renderVideoRoom({ preloadedCompetition, preloadedVideo } = {}) {
         loading: false,
         error: null,
       },
-      competition: preloadedCompetition ?? { room: null, status: 'idle', error: null },
+      competition: preloadedCompetition ?? idleCompetitionState,
       video: preloadedVideo ?? { room: null, status: 'idle', error: null },
     },
   });
@@ -106,6 +135,10 @@ describe('VideoRoomPage', () => {
     useAgoraRoom.mockImplementation(() => agoraRoomState);
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('renders create and join controls before entering a competition room', () => {
     renderVideoRoom();
 
@@ -116,10 +149,11 @@ describe('VideoRoomPage', () => {
     expect(screen.getByText('Tu cámara')).toBeInTheDocument();
     expect(screen.getByText('Rival')).toBeInTheDocument();
     expect(screen.getByText('Crea una sala o únete con un código.')).toBeInTheDocument();
+    expect(screen.queryByText(/timer local/i)).not.toBeInTheDocument();
   });
 
   it('creates a competition room and requests a video token for its channel', async () => {
-    competitionService.createRoom.mockResolvedValueOnce(competitionRoom);
+    competitionService.createRoom.mockResolvedValueOnce(waitingCompetitionRoom);
     videoService.requestToken.mockResolvedValueOnce(readyRoom);
     mockAgoraRoomState({ rtcStatus: 'connected' });
 
@@ -138,9 +172,12 @@ describe('VideoRoomPage', () => {
     expect(screen.getByText('42')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /salir de la sala/i })).toBeInTheDocument();
     expect(store.getState().competition).toEqual({
-      room: competitionRoom,
+      room: waitingCompetitionRoom,
       status: 'ready',
       error: null,
+      result: null,
+      resultStatus: 'idle',
+      resultError: null,
     });
     expect(store.getState().video).toEqual({
       room: readyRoom,
@@ -170,6 +207,9 @@ describe('VideoRoomPage', () => {
       id: 'room-1',
       code: 'ABC123',
       channelName: '',
+      status: 'waiting',
+      host: null,
+      guest: null,
     });
 
     const { user, store } = renderVideoRoom();
@@ -190,7 +230,7 @@ describe('VideoRoomPage', () => {
     mockAgoraRoomState({ rtcStatus: 'connected' });
 
     const { user, store } = renderVideoRoom({
-      preloadedCompetition: { room: competitionRoom, status: 'ready', error: null },
+      preloadedCompetition: readyCompetitionState,
       preloadedVideo: { room: readyRoom, status: 'ready', error: null },
     });
 
@@ -203,6 +243,9 @@ describe('VideoRoomPage', () => {
       room: null,
       status: 'idle',
       error: null,
+      result: null,
+      resultStatus: 'idle',
+      resultError: null,
     });
     expect(store.getState().video).toEqual({
       room: null,
@@ -218,7 +261,7 @@ describe('VideoRoomPage', () => {
     });
 
     renderVideoRoom({
-      preloadedCompetition: { room: competitionRoom, status: 'ready', error: null },
+      preloadedCompetition: readyCompetitionState,
       preloadedVideo: { room: readyRoom, status: 'ready', error: null },
     });
 
@@ -244,6 +287,89 @@ describe('VideoRoomPage', () => {
       room: null,
       status: 'failed',
       error: 'No se pudo crear la sala',
+      result: null,
+      resultStatus: 'idle',
+      resultError: null,
+    });
+  });
+
+  it('submits a DNF result from an active competition room', async () => {
+    const result = { id: 'result-1', timeMs: null, penalty: 'dnf' };
+    competitionService.submitResult.mockResolvedValueOnce(result);
+
+    const { user, store } = renderVideoRoom({
+      preloadedCompetition: readyCompetitionState,
+      preloadedVideo: { room: readyRoom, status: 'ready', error: null },
+    });
+
+    expect(screen.getByText(/timer local/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /iniciar/i }));
+    await user.click(screen.getByRole('button', { name: /^parar$/i }));
+    await user.click(screen.getByRole('button', { name: /^dnf$/i }));
+
+    await waitFor(() => {
+      expect(competitionService.submitResult).toHaveBeenCalledWith({
+        code: 'ABC123',
+        timeMs: null,
+        penalty: 'dnf',
+      });
+    });
+    expect(await screen.findByText('Resultado enviado: DNF (DNF)')).toBeInTheDocument();
+    expect(store.getState().competition).toEqual({
+      ...readyCompetitionState,
+      result,
+      resultStatus: 'ready',
+      resultError: null,
+    });
+  });
+
+  it('refreshes a waiting competition room and enables the timer when it becomes active', async () => {
+    competitionService.getRoom.mockResolvedValueOnce(competitionRoom);
+
+    const { user, store } = renderVideoRoom({
+      preloadedCompetition: {
+        room: waitingCompetitionRoom,
+        status: 'ready',
+        error: null,
+        result: null,
+        resultStatus: 'idle',
+        resultError: null,
+      },
+      preloadedVideo: { room: readyRoom, status: 'ready', error: null },
+    });
+
+    expect(screen.getByText('Esperando rival')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /actualizar sala/i }));
+
+    await waitFor(() => {
+      expect(competitionService.getRoom).toHaveBeenCalledWith({ code: 'ABC123' });
+    });
+    expect(await screen.findByText('Resultado sala ABC123')).toBeInTheDocument();
+    expect(store.getState().competition.room.status).toBe('active');
+  });
+
+  it('shows result submit errors without leaving the video room', async () => {
+    competitionService.submitResult.mockRejectedValueOnce({
+      response: { data: { error: 'Resultado ya enviado' } },
+    });
+
+    const { user, store } = renderVideoRoom({
+      preloadedCompetition: readyCompetitionState,
+      preloadedVideo: { room: readyRoom, status: 'ready', error: null },
+    });
+
+    await user.click(screen.getByRole('button', { name: /iniciar/i }));
+    await user.click(screen.getByRole('button', { name: /^parar$/i }));
+    await user.click(screen.getByRole('button', { name: /^dnf$/i }));
+
+    expect(await screen.findByText('Resultado ya enviado')).toBeInTheDocument();
+    expect(screen.getByText('Sala ABC123')).toBeInTheDocument();
+    expect(store.getState().competition).toEqual({
+      ...readyCompetitionState,
+      resultStatus: 'failed',
+      resultError: 'Resultado ya enviado',
     });
   });
 });
