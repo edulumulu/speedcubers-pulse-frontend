@@ -2,7 +2,7 @@
 
 Red social para speedcubers españoles: competencias 1v1 en tiempo real con videoconferencia, rankings y presencia online. Proyecto de Fin de Master — MVP en 8 semanas.
 
-**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A y 5B completadas. Fase 5B muestra espera del rival, resumen de ronda resuelta/empatada y avanza a la siguiente ronda activa.
+**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B y 6 completadas. Fase 6 conecta presencia online con Socket.io y muestra usuarios conectados en la navbar.
 
 ## Arquitectura
 
@@ -17,6 +17,7 @@ src/
     ranking/       # Leaderboard, stats
     profile/       # User profile, WCA data
     video/          # Waiting room and Agora RTC flow
+    presence/       # Socket.io lifecycle for online presence
   components/      # Shared UI components (Button, Modal, etc.)
   hooks/           # Shared hooks (useSocket, useAuth, etc.)
   store/           # Redux Toolkit slices + selectors
@@ -130,6 +131,7 @@ npm run lint:fix     # Auto-fix
 - **WCA ID inmutable en perfil**: `EditProfileForm` muestra el WCA ID vinculado como solo lectura con icono de candado. Si no hay WCA ID, muestra input con validación de formato antes de llamar al backend.
 - **Video room** (`src/features/video/VideoRoomPage.jsx`): ruta protegida `/compete`, crea o une sala mediante `competitionService`, solicita token RTC a `POST /video/token` con el `channelName` de backend, entra al canal con Agora Web SDK, publica cámara/micrófono, renderiza preview local y stream remoto, muestra timer cuando la sala está activa, permite enviar resultado por ronda, refresca la sala mientras espera al rival y limpia tracks al salir.
 - **Competition timer** (`src/features/timer/CompetitionTimerPanel.jsx`): timer local con `performance.now()`. La barra espaciadora inicia/para; al parar aparecen `OK`, `+2` y `DNF`, y cualquiera de esas acciones envía el resultado al backend. Tras enviar, bloquea el timer hasta que la ronda se resuelve o se detecta la siguiente ronda activa.
+- **Presence connection** (`src/features/presence/PresenceConnection.jsx`): conecta Socket.io cuando existe `accessToken`, envía heartbeat cada 30s, recibe eventos `presence:online`/`presence:offline` y actualiza `presenceSlice`.
 
 ## Antes de hacer push
 
@@ -163,7 +165,7 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 | 4C | Salas de competición con Agora.io: crear/unirse por código + RTC flow | ✅ |
 | 5A | Timer local + submit básico de resultado por ronda | ✅ |
 | 5B | Resumen de ronda, espera del rival y avance a la siguiente ronda | ✅ |
-| 6 | Presencia online | — |
+| 6 | Presencia online en navbar con Socket.io + Redux | ✅ |
 | 7 | Integración, e2e, polish | — |
 | 8 | Deployment (Railway/Vercel) | — |
 
