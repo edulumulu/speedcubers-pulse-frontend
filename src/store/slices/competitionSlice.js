@@ -9,6 +9,16 @@ function resultError(err) {
   return err.response?.data?.error || 'Error al enviar el resultado';
 }
 
+function roundNumber(round) {
+  return round?.number ?? round?.round_number ?? null;
+}
+
+function shouldClearSubmittedResult(currentResult, nextRoom) {
+  const submittedRoundNumber = roundNumber(currentResult?.round);
+  const activeRoundNumber = roundNumber(nextRoom?.activeRound);
+  return submittedRoundNumber !== null && activeRoundNumber !== null && activeRoundNumber > submittedRoundNumber;
+}
+
 export const createCompetitionRoom = createAsyncThunk(
   'competition/createRoom',
   async (_, { rejectWithValue }) => {
@@ -106,6 +116,11 @@ const competitionSlice = createSlice({
       .addCase(refreshCompetitionRoom.fulfilled, (state, action) => {
         state.status = 'ready';
         state.room = action.payload;
+        if (shouldClearSubmittedResult(state.result, action.payload)) {
+          state.result = null;
+          state.resultStatus = 'idle';
+          state.resultError = null;
+        }
       })
       .addCase(refreshCompetitionRoom.rejected, (state, action) => {
         state.error = action.payload;
@@ -118,6 +133,16 @@ const competitionSlice = createSlice({
       .addCase(submitCompetitionResult.fulfilled, (state, action) => {
         state.resultStatus = 'ready';
         state.result = action.payload;
+        if (state.room && action.payload?.nextRound) {
+          state.room.activeRound = action.payload.nextRound;
+        }
+        if (state.room && action.payload?.roundResolution) {
+          state.room.latestCompletedRound = {
+            ...(action.payload.round ?? {}),
+            status: 'completed',
+            resolution: action.payload.roundResolution,
+          };
+        }
       })
       .addCase(submitCompetitionResult.rejected, (state, action) => {
         state.resultStatus = 'failed';

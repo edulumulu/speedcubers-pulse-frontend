@@ -26,12 +26,23 @@ function resultPenalty(result) {
   return result?.penalty ?? 'none';
 }
 
+function resultFinalTime(result) {
+  return result?.finalTimeMs ?? result?.final_time_ms ?? resultTime(result);
+}
+
+function roundResolution(result) {
+  return result?.roundResolution ?? result?.round_resolution ?? null;
+}
+
 export function CompetitionTimerPanel({
   roomCode,
+  activeRound = null,
+  latestCompletedRound = null,
   onSubmit,
   submitStatus = 'idle',
   submitError = null,
   submittedResult = null,
+  isWaitingForOpponent = false,
   now = () => performance.now(),
 }) {
   const [isRunning, setIsRunning] = useState(false);
@@ -41,7 +52,7 @@ export function CompetitionTimerPanel({
   const [hasStoppedTime, setHasStoppedTime] = useState(false);
   const isSubmitting = submitStatus === 'loading';
   const isDnf = penalty === 'dnf';
-  const canValidate = hasStoppedTime;
+  const canValidate = hasStoppedTime && !isWaitingForOpponent;
 
   useEffect(() => {
     if (!isRunning || startedAt === null) return undefined;
@@ -82,7 +93,7 @@ export function CompetitionTimerPanel({
   }
 
   function handleToggleTimer() {
-    if (isSubmitting) return;
+    if (isSubmitting || isWaitingForOpponent) return;
     if (isRunning) {
       handleStop();
       return;
@@ -115,6 +126,8 @@ export function CompetitionTimerPanel({
 
   const submittedTime = submittedResult ? resultTime(submittedResult) : null;
   const submittedPenalty = submittedResult ? resultPenalty(submittedResult) : 'none';
+  const resolution = roundResolution(submittedResult) ?? (!isWaitingForOpponent ? latestCompletedRound?.resolution : null);
+  const activeRoundNumber = activeRound?.number ?? null;
 
   return (
     <section className="border border-border bg-surface rounded-lg p-4" aria-labelledby="competition-timer-title">
@@ -124,9 +137,12 @@ export function CompetitionTimerPanel({
           <h2 id="competition-timer-title" className="text-base font-semibold">
             {roomCode ? `Resultado sala ${roomCode}` : 'Resultado de competencia'}
           </h2>
+          {activeRoundNumber && (
+            <p className="text-xs text-muted mt-1">Ronda {activeRoundNumber}</p>
+          )}
         </div>
         <span className={isRunning ? 'badge-green' : 'badge-cyan'}>
-          {isRunning ? 'Cronometrando' : 'Listo'}
+          {isRunning ? 'Cronometrando' : isWaitingForOpponent ? 'Esperando rival' : 'Listo'}
         </span>
       </div>
 
@@ -142,11 +158,17 @@ export function CompetitionTimerPanel({
           className={isRunning ? 'btn-secondary' : 'btn-primary'}
           type="button"
           onClick={handleToggleTimer}
-          disabled={isSubmitting}
+          disabled={isSubmitting || isWaitingForOpponent}
         >
           {isRunning ? 'Parar' : 'Iniciar'}
         </button>
       </div>
+
+      {isWaitingForOpponent && (
+        <div className="mt-4 rounded-md border border-cyan-400/20 bg-cyan-400/10 px-3 py-2.5 text-sm text-cyan-300">
+          Resultado enviado. Esperando a que el rival cierre esta ronda.
+        </div>
+      )}
 
       {canValidate && (
         <div className="mt-4 rounded-md border border-border bg-bg px-3 py-2.5 text-sm text-muted">
@@ -191,6 +213,27 @@ export function CompetitionTimerPanel({
         </div>
       )}
 
+      {resolution?.status === 'completed' && (
+        <div className="mt-4 rounded-md border border-border bg-bg px-3 py-2.5 text-sm">
+          <p className="font-semibold text-foreground">Ronda resuelta</p>
+          <p className="text-muted mt-1">
+            Gana {resolution.winner?.username ?? 'competidor'} con {formatSolveTime(resultFinalTime(resolution.winnerResult))}.
+          </p>
+          {resolution.elo && (
+            <p className="text-xs text-muted mt-2">
+              Elo: {resolution.winner?.username ?? 'ganador'} {resolution.elo.winner} · {resolution.loser?.username ?? 'rival'} {resolution.elo.loser}
+            </p>
+          )}
+        </div>
+      )}
+
+      {resolution?.status === 'draw' && (
+        <div className="mt-4 rounded-md border border-border bg-bg px-3 py-2.5 text-sm">
+          <p className="font-semibold text-foreground">Ronda empatada</p>
+          <p className="text-muted mt-1">No se actualiza el Elo en esta ronda.</p>
+        </div>
+      )}
+
       {submitError && (
         <div className="mt-4 rounded-md border border-red-400/20 bg-red-400/10 px-3 py-2.5 text-sm text-red-400">
           {submitError}
@@ -202,6 +245,17 @@ export function CompetitionTimerPanel({
 
 CompetitionTimerPanel.propTypes = {
   roomCode: PropTypes.string,
+  activeRound: PropTypes.shape({
+    id: PropTypes.string,
+    number: PropTypes.number,
+    scramble: PropTypes.string,
+    status: PropTypes.string,
+  }),
+  latestCompletedRound: PropTypes.shape({
+    id: PropTypes.string,
+    number: PropTypes.number,
+    resolution: PropTypes.object,
+  }),
   onSubmit: PropTypes.func.isRequired,
   submitStatus: PropTypes.oneOf(['idle', 'loading', 'ready', 'failed']),
   submitError: PropTypes.string,
@@ -210,6 +264,23 @@ CompetitionTimerPanel.propTypes = {
     time_ms: PropTypes.oneOfType([PropTypes.number, PropTypes.oneOf([null])]),
     time: PropTypes.oneOfType([PropTypes.number, PropTypes.oneOf([null])]),
     penalty: PropTypes.oneOf(['none', '+2', 'dnf']),
+    round: PropTypes.shape({
+      id: PropTypes.string,
+      number: PropTypes.number,
+    }),
+    roundResolution: PropTypes.shape({
+      status: PropTypes.oneOf(['pending', 'completed', 'draw']),
+      reason: PropTypes.string,
+      winner: PropTypes.shape({ id: PropTypes.string, username: PropTypes.string }),
+      loser: PropTypes.shape({ id: PropTypes.string, username: PropTypes.string }),
+      winnerResult: PropTypes.object,
+      loserResult: PropTypes.object,
+      elo: PropTypes.shape({
+        winner: PropTypes.number,
+        loser: PropTypes.number,
+      }),
+    }),
   }),
+  isWaitingForOpponent: PropTypes.bool,
   now: PropTypes.func,
 };

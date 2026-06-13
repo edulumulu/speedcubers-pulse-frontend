@@ -2,7 +2,7 @@
 
 Red social para speedcubers españoles: competencias 1v1 en tiempo real con videoconferencia, rankings y presencia online. Proyecto de Fin de Master — MVP en 8 semanas.
 
-**Estado actual**: Fases 0, 1, 2, 3 y 4C completadas. Fase 5A implementada: timer local con barra espaciadora y submit básico de resultado por ronda.
+**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A y 5B completadas. Fase 5B muestra espera del rival, resumen de ronda resuelta/empatada y avanza a la siguiente ronda activa.
 
 ## Arquitectura
 
@@ -27,7 +27,7 @@ src/
 
 **Redux Toolkit** para estado global (auth, ranking, competition, video, presence). Estado local de componentes con `useState`/`useReducer`. No mezclar: si el estado no se comparte entre features, va local.
 
-**Decisión crítica**: el timer corre 100% en el cliente. El resultado se envía al backend al validar `OK`, `+2` o `DNF`; el servidor valida el rango (0–600s) y persiste el resultado en la ronda activa — no confiar en respuestas del servidor para el tick del timer.
+**Decisión crítica**: el timer corre 100% en el cliente. El resultado se envía al backend al validar `OK`, `+2` o `DNF`; el servidor valida el rango (0–600s), persiste el resultado en la ronda activa, resuelve la ronda cuando ambos usuarios envían y devuelve el estado necesario para mostrar resumen y desbloquear la siguiente ronda — no confiar en respuestas del servidor para el tick del timer.
 
 ## Stack
 
@@ -128,8 +128,8 @@ npm run lint:fix     # Auto-fix
 - **Route coverage tests** (`src/components/__tests__/App.test.jsx`): 12 tests que verifican que todas las rutas públicas y protegidas existen. Si se pierden archivos en un merge, los tests fallan inmediatamente.
 - **Forgot/Reset password**: `ForgotPasswordPage` (anti-enumeración, siempre muestra éxito) y `ResetPasswordPage` (lee `?token=` de la URL, valida contraseña + confirmación, redirige a `/login` con mensaje de éxito).
 - **WCA ID inmutable en perfil**: `EditProfileForm` muestra el WCA ID vinculado como solo lectura con icono de candado. Si no hay WCA ID, muestra input con validación de formato antes de llamar al backend.
-- **Video room** (`src/features/video/VideoRoomPage.jsx`): ruta protegida `/compete`, crea o une sala mediante `competitionService`, solicita token RTC a `POST /video/token` con el `channelName` de backend, entra al canal con Agora Web SDK, publica cámara/micrófono, renderiza preview local y stream remoto, muestra timer cuando la sala está activa, permite enviar resultado por ronda y limpia tracks al salir.
-- **Competition timer** (`src/features/timer/CompetitionTimerPanel.jsx`): timer local con `performance.now()`. La barra espaciadora inicia/para; al parar aparecen `OK`, `+2` y `DNF`, y cualquiera de esas acciones envía el resultado al backend.
+- **Video room** (`src/features/video/VideoRoomPage.jsx`): ruta protegida `/compete`, crea o une sala mediante `competitionService`, solicita token RTC a `POST /video/token` con el `channelName` de backend, entra al canal con Agora Web SDK, publica cámara/micrófono, renderiza preview local y stream remoto, muestra timer cuando la sala está activa, permite enviar resultado por ronda, refresca la sala mientras espera al rival y limpia tracks al salir.
+- **Competition timer** (`src/features/timer/CompetitionTimerPanel.jsx`): timer local con `performance.now()`. La barra espaciadora inicia/para; al parar aparecen `OK`, `+2` y `DNF`, y cualquiera de esas acciones envía el resultado al backend. Tras enviar, bloquea el timer hasta que la ronda se resuelve o se detecta la siguiente ronda activa.
 
 ## Antes de hacer push
 
@@ -162,7 +162,7 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 | 3 | Rankings + leaderboard | ✅ |
 | 4C | Salas de competición con Agora.io: crear/unirse por código + RTC flow | ✅ |
 | 5A | Timer local + submit básico de resultado por ronda | ✅ |
-| 5B | Cierre de match, ganador, Elo/ranking | — |
+| 5B | Resumen de ronda, espera del rival y avance a la siguiente ronda | ✅ |
 | 6 | Presencia online | — |
 | 7 | Integración, e2e, polish | — |
 | 8 | Deployment (Railway/Vercel) | — |

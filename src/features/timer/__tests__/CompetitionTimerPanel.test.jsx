@@ -120,4 +120,69 @@ describe('CompetitionTimerPanel', () => {
 
     expect(screen.getByText('No se pudo enviar')).toBeInTheDocument();
   });
+
+  it('locks the timer while waiting for the opponent result', () => {
+    const onSubmit = vi.fn();
+
+    render(
+      <CompetitionTimerPanel
+        roomCode="ABC123"
+        onSubmit={onSubmit}
+        submittedResult={{ id: 'result-1', timeMs: 12345, penalty: 'none', round: { number: 1 } }}
+        isWaitingForOpponent
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /iniciar/i })).toBeDisabled();
+    expect(screen.getByText(/esperando a que el rival cierre esta ronda/i)).toBeInTheDocument();
+  });
+
+  it('renders the resolved round summary with Elo changes', () => {
+    render(
+      <CompetitionTimerPanel
+        roomCode="ABC123"
+        onSubmit={vi.fn()}
+        submittedResult={{
+          id: 'result-2',
+          timeMs: 13000,
+          penalty: 'none',
+          round: { number: 1 },
+          roundResolution: {
+            status: 'completed',
+            winner: { id: 'host-id', username: 'host' },
+            loser: { id: 'guest-id', username: 'guest' },
+            winnerResult: { finalTimeMs: 13000, penalty: 'none' },
+            loserResult: { finalTimeMs: 15000, penalty: 'none' },
+            elo: { winner: 1016, loser: 984 },
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Ronda resuelta')).toBeInTheDocument();
+    expect(screen.getByText(/gana host con 13.000/i)).toBeInTheDocument();
+    expect(screen.getByText(/host 1016/i)).toBeInTheDocument();
+    expect(screen.getByText(/guest 984/i)).toBeInTheDocument();
+  });
+
+  it('renders the latest completed round summary after room refresh', () => {
+    render(
+      <CompetitionTimerPanel
+        roomCode="ABC123"
+        activeRound={{ id: 'round-2', number: 2, status: 'active' }}
+        latestCompletedRound={{
+          id: 'round-1',
+          number: 1,
+          resolution: {
+            status: 'draw',
+            reason: 'both_dnf',
+          },
+        }}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Ronda 2')).toBeInTheDocument();
+    expect(screen.getByText('Ronda empatada')).toBeInTheDocument();
+  });
 });
