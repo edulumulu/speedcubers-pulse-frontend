@@ -19,10 +19,18 @@ describe('Navbar', () => {
           loading: false,
           error: null,
         },
+        presence: {
+          users: [{ id: '2', username: 'rival' }],
+          status: 'succeeded',
+          socketStatus: 'connected',
+          error: null,
+        },
       },
     });
     expect(screen.getByText('edulumulu')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /salir/i })).toBeInTheDocument();
+    expect(screen.getByText(/online 1/i)).toBeInTheDocument();
+    expect(screen.getByText('rival')).toBeInTheDocument();
   });
 
   it('shows ranking link always', () => {

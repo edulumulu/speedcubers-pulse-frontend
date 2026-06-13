@@ -3,6 +3,7 @@ import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from '../store/slices/authSlice.js';
+import presenceReducer from '../store/slices/presenceSlice.js';
 
 const routerFuture = {
   v7_startTransition: true,
@@ -11,7 +12,7 @@ const routerFuture = {
 
 export function renderWithProviders(ui, { preloadedState = {} } = {}) {
   const store = configureStore({
-    reducer: { auth: authReducer },
+    reducer: { auth: authReducer, presence: presenceReducer },
     preloadedState,
   });
 

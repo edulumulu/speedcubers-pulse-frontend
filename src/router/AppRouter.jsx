@@ -8,12 +8,14 @@ import { ProfilePage } from '../features/profile/ProfilePage.jsx';
 import { UserProfilePage } from '../features/profile/UserProfilePage.jsx';
 import { RankingPage } from '../features/ranking/RankingPage.jsx';
 import { VideoRoomPage } from '../features/video/VideoRoomPage.jsx';
+import { PresenceConnection } from '../features/presence/PresenceConnection.jsx';
 import { ProtectedRoute } from './ProtectedRoute.jsx';
 import { GuestRoute } from './GuestRoute.jsx';
 
 export function AppRouter() {
   return (
     <>
+      <PresenceConnection />
       <Navbar />
       <Routes>
         <Route path="/" element={<RankingPage />} />

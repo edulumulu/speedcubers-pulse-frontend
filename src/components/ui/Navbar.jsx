@@ -1,11 +1,15 @@
 import { Link, NavLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout, selectIsAuthenticated, selectUser } from '../../store/slices/authSlice.js';
+import { selectOnlineUsers, selectPresenceSocketStatus } from '../../store/slices/presenceSlice.js';
 
 export function Navbar() {
   const dispatch = useDispatch();
   const isAuth = useSelector(selectIsAuthenticated);
   const user = useSelector(selectUser);
+  const onlineUsers = useSelector(selectOnlineUsers);
+  const presenceStatus = useSelector(selectPresenceSocketStatus);
+  const isPresenceLive = presenceStatus === 'connected';
 
   return (
     <nav className="flex justify-between items-center px-8 py-4 border-b border-border bg-bg sticky top-0 z-10">
@@ -22,6 +26,31 @@ export function Navbar() {
 
         {isAuth ? (
           <>
+            <details className="relative group">
+              <summary className="list-none cursor-pointer text-sm text-muted hover:text-[#e2f0ff] transition-colors">
+                <span
+                  className={`inline-block h-2 w-2 rounded-full mr-2 ${
+                    isPresenceLive ? 'bg-green-400' : 'bg-muted'
+                  }`}
+                  aria-hidden="true"
+                />
+                Online {onlineUsers.length}
+              </summary>
+              <div className="absolute right-0 mt-3 w-56 rounded-md border border-border bg-surface p-3 shadow-lg">
+                <p className="text-xs uppercase text-muted mb-2">Usuarios online</p>
+                {onlineUsers.length ? (
+                  <ul className="flex flex-col gap-1">
+                    {onlineUsers.slice(0, 5).map((onlineUser) => (
+                      <li className="text-sm text-[#e2f0ff]" key={onlineUser.id}>
+                        {onlineUser.username}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted">Sin usuarios conectados</p>
+                )}
+              </div>
+            </details>
             <NavLink to="/profile" className={({ isActive }) =>
               `text-sm transition-colors ${isActive ? 'text-[#e2f0ff]' : 'text-muted hover:text-[#e2f0ff]'}`
             }>

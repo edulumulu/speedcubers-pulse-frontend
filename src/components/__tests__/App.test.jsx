@@ -7,6 +7,7 @@ import userReducer from '../../store/slices/userSlice.js';
 import rankingReducer from '../../store/slices/rankingSlice.js';
 import competitionReducer from '../../store/slices/competitionSlice.js';
 import videoReducer from '../../store/slices/videoSlice.js';
+import presenceReducer from '../../store/slices/presenceSlice.js';
 import { AppRouter } from '../../router/AppRouter.jsx';
 import { vi } from 'vitest';
 
@@ -17,6 +18,16 @@ vi.mock('../../services/userService.js', () => ({
     updateMe: vi.fn(),
     deleteMe: vi.fn(() => new Promise(() => {})),
   },
+}));
+
+vi.mock('../../services/presenceService.js', () => ({
+  presenceService: {
+    getOnlineUsers: vi.fn().mockResolvedValue({ users: [] }),
+  },
+}));
+
+vi.mock('../../features/presence/PresenceConnection.jsx', () => ({
+  PresenceConnection: () => null,
 }));
 
 const routerFuture = {
@@ -32,6 +43,7 @@ const makeStore = (authOverrides = {}) =>
       ranking: rankingReducer,
       competition: competitionReducer,
       video: videoReducer,
+      presence: presenceReducer,
     },
     preloadedState: {
       auth: { user: null, accessToken: null, refreshToken: null, loading: false, error: null, ...authOverrides },
@@ -39,6 +51,7 @@ const makeStore = (authOverrides = {}) =>
       ranking: { data: [], event: '3x3', status: 'succeeded', error: null },
       competition: { room: null, status: 'idle', error: null },
       video: { room: null, status: 'idle', error: null },
+      presence: { users: [], status: 'idle', socketStatus: 'idle', error: null },
     },
   });
 
