@@ -2,7 +2,7 @@
 
 Red social para speedcubers españoles: competencias 1v1 en tiempo real con videoconferencia, rankings y presencia online. Proyecto de Fin de Master — MVP en 8 semanas.
 
-**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B y 6 completadas. Fase 6 conecta presencia online con Socket.io y muestra usuarios conectados en la navbar.
+**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B y 6 completadas. Fase 7A en curso: estabilidad de sesión al recargar mediante refresh cookie `httpOnly` y bootstrap de auth.
 
 ## Arquitectura
 
@@ -93,7 +93,7 @@ Targets:
 
 ## Seguridad (frontend)
 
-- Nunca almacenar tokens JWT en `localStorage` — usar `httpOnly cookies` o memoria (en RAM con Redux)
+- Nunca almacenar tokens JWT en `localStorage` — access token solo en memoria (Redux) y refresh token en cookie `httpOnly`
 - No mostrar información sensible de otros usuarios sin que el backend lo autorice
 - Validar inputs en cliente antes de enviar (UX), pero confiar en la validación del backend para seguridad
 - No exponer claves de Agora.io en el bundle — el backend genera los tokens RTC
@@ -125,6 +125,7 @@ npm run lint:fix     # Auto-fix
 ## Convenciones implementadas
 
 - **`injectStore`** (`src/services/api.js`): patrón para evitar importación circular con el store. En `main.jsx` se llama `injectStore(store)` después de crear el store. El interceptor de Axios usa `_store?.getState?.()?.auth?.accessToken`.
+- **`AuthBootstrap`** (`src/features/auth/AuthBootstrap.jsx`): al arrancar la app llama a `POST /auth/refresh` con credenciales/cookie; si hay sesión recuperable restaura `user` y `accessToken` en Redux. `GuestRoute` y `ProtectedRoute` esperan `bootstrapped` antes de redirigir.
 - **`GuestRoute`** (`src/router/GuestRoute.jsx`): redirige a `/` a usuarios ya autenticados (para `/login`, `/register`, `/forgot-password`, `/reset-password`).
 - **Route coverage tests** (`src/components/__tests__/App.test.jsx`): 12 tests que verifican que todas las rutas públicas y protegidas existen. Si se pierden archivos en un merge, los tests fallan inmediatamente.
 - **Forgot/Reset password**: `ForgotPasswordPage` (anti-enumeración, siempre muestra éxito) y `ResetPasswordPage` (lee `?token=` de la URL, valida contraseña + confirmación, redirige a `/login` con mensaje de éxito).
@@ -166,6 +167,7 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 | 5A | Timer local + submit básico de resultado por ronda | ✅ |
 | 5B | Resumen de ronda, espera del rival y avance a la siguiente ronda | ✅ |
 | 6 | Presencia online en navbar con Socket.io + Redux | ✅ |
+| 7A | Estabilidad de sesión: recuperación al recargar sin `localStorage` | ⏳ |
 | 7 | Integración, e2e, polish | — |
 | 8 | Deployment (Railway/Vercel) | — |
 

@@ -10,8 +10,8 @@ export const authService = {
   logout: (token) =>
     api.post('/auth/logout', {}, { headers: { Authorization: `Bearer ${token}` } }),
 
-  refresh: (refreshToken) =>
-    api.post('/auth/refresh', { refresh_token: refreshToken }).then((r) => r.data),
+  refresh: () =>
+    api.post('/auth/refresh', {}).then((r) => r.data),
 
   linkWca: (wcaId, token) =>
     api.post('/auth/link-wca', { wca_id: wcaId }, {
