@@ -10,6 +10,8 @@ function normalizeRoomResponse(data) {
     status: roomData?.status ?? 'waiting',
     host: roomData?.host ?? null,
     guest: roomData?.guest ?? null,
+    activeRound: roomData?.activeRound ?? null,
+    latestCompletedRound: roomData?.latestCompletedRound ?? null,
   };
 }
 

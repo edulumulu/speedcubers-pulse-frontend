@@ -23,6 +23,10 @@ import {
 import { CompetitionTimerPanel } from '../timer/CompetitionTimerPanel.jsx';
 import { useAgoraRoom } from './useAgoraRoom.js';
 
+function roundNumber(round) {
+  return round?.number ?? round?.round_number ?? null;
+}
+
 export function VideoRoomPage() {
   const dispatch = useDispatch();
   const competitionRoom = useSelector(selectCompetitionRoom);
@@ -53,16 +57,24 @@ export function VideoRoomPage() {
   const controlsDisabled = isLoading || hasCompetitionRoom;
   const roomCode = competitionRoom?.code;
   const isCompetitionActive = competitionRoom?.status === 'active';
+  const activeRoundNumber = roundNumber(competitionRoom?.activeRound);
+  const submittedRoundNumber = roundNumber(competitionResult?.round);
+  const isWaitingForNextRound = Boolean(
+    isCompetitionActive
+      && submittedRoundNumber !== null
+      && (activeRoundNumber === null || activeRoundNumber <= submittedRoundNumber)
+      && !competitionResult?.nextRound,
+  );
 
   useEffect(() => {
-    if (!roomCode || isCompetitionActive) return undefined;
+    if (!roomCode || (isCompetitionActive && !isWaitingForNextRound)) return undefined;
 
     const intervalId = window.setInterval(() => {
       dispatch(refreshCompetitionRoom({ code: roomCode }));
     }, 5000);
 
     return () => window.clearInterval(intervalId);
-  }, [dispatch, isCompetitionActive, roomCode]);
+  }, [dispatch, isCompetitionActive, isWaitingForNextRound, roomCode]);
 
   async function openVideoRoom(roomAction) {
     try {
@@ -267,10 +279,13 @@ export function VideoRoomPage() {
         {hasCompetitionRoom && isCompetitionActive && (
           <CompetitionTimerPanel
             roomCode={roomCode}
+            activeRound={competitionRoom.activeRound}
+            latestCompletedRound={competitionRoom.latestCompletedRound}
             onSubmit={handleSubmitResult}
             submitStatus={competitionResultStatus}
             submitError={competitionResultError}
             submittedResult={competitionResult}
+            isWaitingForOpponent={isWaitingForNextRound}
           />
         )}
       </div>

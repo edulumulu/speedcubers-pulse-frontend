@@ -32,6 +32,8 @@ describe('competitionService', () => {
       status: 'waiting',
       host: null,
       guest: null,
+      activeRound: null,
+      latestCompletedRound: null,
     });
     expect(api.post).toHaveBeenCalledWith('/competitions');
   });
@@ -53,6 +55,8 @@ describe('competitionService', () => {
       status: 'active',
       host: null,
       guest: null,
+      activeRound: null,
+      latestCompletedRound: null,
     });
     expect(api.post).toHaveBeenCalledWith('/competitions/join', { code: 'XYZ789' });
   });
@@ -76,6 +80,8 @@ describe('competitionService', () => {
       status: 'active',
       host: null,
       guest: null,
+      activeRound: null,
+      latestCompletedRound: null,
     });
     expect(api.get).toHaveBeenCalledWith('/competitions/XYZ789');
   });

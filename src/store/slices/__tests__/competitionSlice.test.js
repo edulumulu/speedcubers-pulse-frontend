@@ -211,6 +211,53 @@ describe('competitionSlice reducers', () => {
     });
   });
 
+  it('advances active round when submitted result closes the round', async () => {
+    const nextRound = { id: 'round-2', number: 2, status: 'active' };
+    const result = {
+      id: 'result-2',
+      timeMs: 13000,
+      penalty: 'none',
+      round: { id: 'round-1', number: 1 },
+      roundResolution: { status: 'completed', winner: { username: 'host' } },
+      nextRound,
+    };
+    competitionService.submitResult.mockResolvedValueOnce(result);
+    const store = makeStore({
+      room: { ...room, activeRound: { id: 'round-1', number: 1, status: 'active' } },
+      status: 'ready',
+    });
+
+    await store.dispatch(submitCompetitionResult({ code: 'ABC123', timeMs: 13000, penalty: 'none' }));
+
+    expect(store.getState().competition.room.activeRound).toEqual(nextRound);
+    expect(store.getState().competition.room.latestCompletedRound).toMatchObject({
+      id: 'round-1',
+      number: 1,
+      status: 'completed',
+      resolution: result.roundResolution,
+    });
+  });
+
+  it('clears submitted result when refresh sees a newer active round', async () => {
+    const nextRoom = { ...room, activeRound: { id: 'round-2', number: 2, status: 'active' } };
+    competitionService.getRoom.mockResolvedValueOnce(nextRoom);
+    const store = makeStore({
+      room: { ...room, activeRound: { id: 'round-1', number: 1, status: 'active' } },
+      status: 'ready',
+      result: { id: 'result-1', round: { id: 'round-1', number: 1 } },
+      resultStatus: 'ready',
+    });
+
+    await store.dispatch(refreshCompetitionRoom({ code: 'ABC123' }));
+
+    expect(store.getState().competition).toMatchObject({
+      room: nextRoom,
+      result: null,
+      resultStatus: 'idle',
+      resultError: null,
+    });
+  });
+
   it('stores a result error when submit fails', async () => {
     competitionService.submitResult.mockRejectedValueOnce({
       response: { data: { error: 'Resultado duplicado' } },
