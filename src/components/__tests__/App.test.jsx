@@ -46,7 +46,7 @@ const makeStore = (authOverrides = {}) =>
       presence: presenceReducer,
     },
     preloadedState: {
-      auth: { user: null, accessToken: null, refreshToken: null, loading: false, error: null, ...authOverrides },
+      auth: { user: null, accessToken: null, refreshToken: null, loading: false, bootstrapped: true, error: null, ...authOverrides },
       user: { profile: null, me: null, loading: false, error: null },
       ranking: { data: [], event: '3x3', status: 'succeeded', error: null },
       competition: { room: null, status: 'idle', error: null },
