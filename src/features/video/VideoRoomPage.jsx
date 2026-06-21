@@ -20,8 +20,10 @@ import {
   selectVideoRoom,
   selectVideoStatus,
 } from '../../store/slices/videoSlice.js';
+import { selectUser } from '../../store/slices/authSlice.js';
 import { CompetitionTimerPanel } from '../timer/CompetitionTimerPanel.jsx';
 import { useAgoraRoom } from './useAgoraRoom.js';
+import { competitionSocketService } from '../../services/competitionSocketService.js';
 
 function roundNumber(round) {
   return round?.number ?? round?.round_number ?? null;
@@ -34,6 +36,24 @@ function roomStatusCopy({ isConnectedRtc, isJoiningRtc, isReady }) {
   return 'Crea una sala o únete con un código.';
 }
 
+function scorePlayerInitial(username, fallback) {
+  return (username || fallback || '?').trim().charAt(0).toUpperCase();
+}
+
+function resolveScorePlayers(matchScore, currentUser) {
+  const players = [matchScore?.host, matchScore?.guest].filter(Boolean);
+  const ownPlayer = players.find((player) => player.id && player.id === currentUser?.id) ?? matchScore?.host ?? null;
+  const rivalPlayer = players.find((player) => player.id !== ownPlayer?.id) ?? matchScore?.guest ?? null;
+
+  return {
+    ownPlayer,
+    rivalPlayer,
+    ownScore: ownPlayer?.score ?? 0,
+    rivalScore: rivalPlayer?.score ?? 0,
+    rivalUsername: rivalPlayer?.username ?? 'Rival',
+  };
+}
+
 export function VideoRoomPage() {
   const dispatch = useDispatch();
   const competitionRoom = useSelector(selectCompetitionRoom);
@@ -42,11 +62,16 @@ export function VideoRoomPage() {
   const competitionResult = useSelector(selectCompetitionResult);
   const competitionResultStatus = useSelector(selectCompetitionResultStatus);
   const competitionResultError = useSelector(selectCompetitionResultError);
+  const accessToken = useSelector((state) => state.auth.accessToken);
+  const currentUser = useSelector(selectUser);
   const room = useSelector(selectVideoRoom);
   const status = useSelector(selectVideoStatus);
   const error = useSelector(selectVideoError);
   const [joinCode, setJoinCode] = useState('');
   const [copyStatus, setCopyStatus] = useState('idle');
+  const [competitionSocket, setCompetitionSocket] = useState(null);
+  const [inspectionStart, setInspectionStart] = useState(null);
+  const [roundFinalDismiss, setRoundFinalDismiss] = useState(null);
   const {
     localVideoRef,
     remoteUsers,
@@ -66,6 +91,13 @@ export function VideoRoomPage() {
   const roomCode = competitionRoom?.code;
   const isCompetitionActive = competitionRoom?.status === 'active';
   const activeRoundNumber = roundNumber(competitionRoom?.activeRound);
+  const {
+    ownPlayer,
+    rivalPlayer,
+    ownScore,
+    rivalScore,
+    rivalUsername,
+  } = resolveScorePlayers(competitionRoom?.matchScore, currentUser);
   const submittedRoundNumber = roundNumber(competitionResult?.round);
   const isWaitingForNextRound = Boolean(
     isCompetitionActive
@@ -83,6 +115,49 @@ export function VideoRoomPage() {
 
     return () => window.clearInterval(intervalId);
   }, [dispatch, isCompetitionActive, isWaitingForNextRound, roomCode]);
+
+  useEffect(() => {
+    setInspectionStart(null);
+  }, [competitionRoom?.activeRound?.id]);
+
+  useEffect(() => {
+    if (!accessToken || !roomCode || !isCompetitionActive) return undefined;
+
+    const socket = competitionSocketService.connect({ token: accessToken });
+    setCompetitionSocket(socket);
+
+    socket.on('connect', () => {
+      socket.emit('competition:join', { code: roomCode });
+    });
+    socket.on('competition:inspection:started', (payload) => {
+      if (payload?.code !== roomCode) return;
+      setInspectionStart({
+        roundId: payload.roundId,
+        startedAt: payload.startedAt,
+      });
+    });
+    socket.on('competition:round-final:dismissed', (payload) => {
+      if (payload?.code !== roomCode) return;
+      setRoundFinalDismiss({
+        roundId: payload.roundId,
+        dismissedAt: payload.dismissedAt ?? Date.now(),
+      });
+    });
+    socket.on('competition:round:updated', (payload) => {
+      if (payload?.code !== roomCode) return;
+      dispatch(refreshCompetitionRoom({ code: roomCode }));
+    });
+    socket.connect();
+
+    return () => {
+      socket.off('connect');
+      socket.off('competition:inspection:started');
+      socket.off('competition:round-final:dismissed');
+      socket.off('competition:round:updated');
+      socket.disconnect();
+      setCompetitionSocket(null);
+    };
+  }, [accessToken, dispatch, isCompetitionActive, roomCode]);
 
   useEffect(() => {
     setCopyStatus('idle');
@@ -116,13 +191,44 @@ export function VideoRoomPage() {
   }
 
   async function handleSubmitResult({ timeMs, penalty }) {
-    if (!roomCode) return;
+    if (!roomCode) return null;
 
     try {
-      await dispatch(submitCompetitionResult({ code: roomCode, timeMs, penalty })).unwrap();
+      const result = await dispatch(submitCompetitionResult({ code: roomCode, timeMs, penalty })).unwrap();
+      competitionSocket?.emit('competition:round:changed', {
+        code: roomCode,
+        roundId: result?.round?.id ?? null,
+      });
+      return result;
     } catch {
       // The rejected thunk stores the visible error in Redux.
+      return null;
     }
+  }
+
+  function handleStartInspection({ roundId, startedAt }) {
+    if (!roomCode) return;
+
+    const payload = { code: roomCode, roundId, startedAt };
+    setInspectionStart({ roundId, startedAt });
+    if (!competitionSocket) return;
+
+    competitionSocket.emit('competition:join', { code: roomCode }, () => {
+      competitionSocket.emit('competition:inspection:start', payload);
+    });
+  }
+
+  function handleDismissRoundFinal({ roundId }) {
+    if (!roomCode) return;
+
+    if (!competitionSocket) {
+      setRoundFinalDismiss({ roundId, dismissedAt: Date.now() });
+      return;
+    }
+
+    competitionSocket.emit('competition:join', { code: roomCode }, () => {
+      competitionSocket.emit('competition:round-final:dismiss', { code: roomCode, roundId });
+    });
   }
 
   function handleRefreshRoom() {
@@ -312,6 +418,29 @@ export function VideoRoomPage() {
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                <div
+                  className="flex items-center gap-2 rounded-md border border-border-light bg-bg px-3 py-2"
+                  aria-label={`Marcador de la sala: tú ${ownScore}, ${rivalUsername} ${rivalScore}`}
+                  data-testid="persistent-match-score"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span className="grid h-7 w-7 place-items-center rounded-full border border-border bg-surface text-xs font-semibold text-[#e2f0ff]">
+                      {scorePlayerInitial(ownPlayer?.username ?? currentUser?.username, 'T')}
+                    </span>
+                    <span className="hidden text-xs text-muted sm:inline">Tú</span>
+                  </div>
+                  <div className="flex items-baseline gap-1 font-mono text-[#e2f0ff]">
+                    <span className="text-xl leading-none">{ownScore}</span>
+                    <span className="text-sm text-muted">-</span>
+                    <span className="text-xl leading-none">{rivalScore}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="hidden max-w-24 truncate text-xs text-muted sm:inline">{rivalUsername}</span>
+                    <span className="grid h-7 w-7 place-items-center rounded-full border border-border bg-surface text-xs font-semibold text-[#e2f0ff]">
+                      {scorePlayerInitial(rivalPlayer?.username, 'R')}
+                    </span>
+                  </div>
+                </div>
                 <details className="relative">
                   <summary className="list-none cursor-pointer rounded-md border border-border bg-bg px-3 py-2 text-sm text-muted hover:border-border-light hover:text-[#e2f0ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                     Detalles de sala
@@ -400,11 +529,17 @@ export function VideoRoomPage() {
                 roomCode={roomCode}
                 activeRound={competitionRoom.activeRound}
                 latestCompletedRound={competitionRoom.latestCompletedRound}
+                matchScore={competitionRoom.matchScore}
+                currentUser={currentUser}
                 onSubmit={handleSubmitResult}
                 submitStatus={competitionResultStatus}
                 submitError={competitionResultError}
                 submittedResult={competitionResult}
                 isWaitingForOpponent={isWaitingForNextRound}
+                inspectionStartSignal={inspectionStart}
+                onStartInspection={handleStartInspection}
+                roundFinalDismissSignal={roundFinalDismiss}
+                onDismissRoundFinal={handleDismissRoundFinal}
               />
             </aside>
           </section>

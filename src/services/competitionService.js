@@ -12,6 +12,7 @@ function normalizeRoomResponse(data) {
     guest: roomData?.guest ?? null,
     activeRound: roomData?.activeRound ?? null,
     latestCompletedRound: roomData?.latestCompletedRound ?? null,
+    matchScore: roomData?.matchScore ?? null,
   };
 }
 
