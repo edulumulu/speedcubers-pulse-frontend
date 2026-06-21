@@ -146,8 +146,8 @@ describe('VideoRoomPage', () => {
     expect(screen.getByLabelText(/código de sala/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /unirse con código/i })).toBeInTheDocument();
     expect(screen.getByText('Esperando sala de competencia')).toBeInTheDocument();
-    expect(screen.getByText('Tu cámara')).toBeInTheDocument();
-    expect(screen.getByText('Rival')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Tu cámara' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Rival' })).toBeInTheDocument();
     expect(screen.getByText('Crea una sala o únete con un código.')).toBeInTheDocument();
     expect(screen.queryByText(/timer local/i)).not.toBeInTheDocument();
   });
@@ -165,7 +165,7 @@ describe('VideoRoomPage', () => {
       expect(competitionService.createRoom).toHaveBeenCalledTimes(1);
       expect(videoService.requestToken).toHaveBeenCalledWith({ channelName: 'match-test' });
     });
-    expect(await screen.findByText('Sala ABC123')).toBeInTheDocument();
+    expect(await screen.findByTestId('room-code')).toHaveTextContent('ABC123');
     expect(screen.getByText('Cámara y micrófono conectados a la sala.')).toBeInTheDocument();
     expect(screen.getByText('En directo')).toBeInTheDocument();
     expect(screen.getByText('match-test')).toBeInTheDocument();
@@ -199,7 +199,7 @@ describe('VideoRoomPage', () => {
       expect(competitionService.joinRoom).toHaveBeenCalledWith({ code: 'ABC123' });
       expect(videoService.requestToken).toHaveBeenCalledWith({ channelName: 'match-test' });
     });
-    expect(await screen.findByText('Sala ABC123')).toBeInTheDocument();
+    expect(await screen.findByTestId('room-code')).toHaveTextContent('ABC123');
   });
 
   it('does not request a video token when the competition response has no channel', async () => {
@@ -306,7 +306,7 @@ describe('VideoRoomPage', () => {
 
     await user.click(screen.getByRole('button', { name: /iniciar/i }));
     await user.click(screen.getByRole('button', { name: /^parar$/i }));
-    await user.click(screen.getByRole('button', { name: /^dnf$/i }));
+    await user.click(screen.getByRole('button', { name: /enviar resultado dnf/i }));
 
     await waitFor(() => {
       expect(competitionService.submitResult).toHaveBeenCalledWith({
@@ -315,7 +315,8 @@ describe('VideoRoomPage', () => {
         penalty: 'dnf',
       });
     });
-    expect(await screen.findByText('Resultado enviado: DNF (DNF)')).toBeInTheDocument();
+    expect(await screen.findByText('Último resultado enviado')).toBeInTheDocument();
+    expect(screen.getByText('DNF (DNF)')).toBeInTheDocument();
     expect(store.getState().competition).toEqual({
       ...readyCompetitionState,
       result,
@@ -362,10 +363,10 @@ describe('VideoRoomPage', () => {
 
     await user.click(screen.getByRole('button', { name: /iniciar/i }));
     await user.click(screen.getByRole('button', { name: /^parar$/i }));
-    await user.click(screen.getByRole('button', { name: /^dnf$/i }));
+    await user.click(screen.getByRole('button', { name: /enviar resultado dnf/i }));
 
     expect(await screen.findByText('Resultado ya enviado')).toBeInTheDocument();
-    expect(screen.getByText('Sala ABC123')).toBeInTheDocument();
+    expect(screen.getByTestId('room-code')).toHaveTextContent('ABC123');
     expect(store.getState().competition).toEqual({
       ...readyCompetitionState,
       resultStatus: 'failed',

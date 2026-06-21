@@ -9,7 +9,7 @@ export default {
         border: '#0e2030',
         'border-light': '#122840',
         accent: '#22d3ee',
-        muted: '#4a6580',
+        muted: '#7f98b2',
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

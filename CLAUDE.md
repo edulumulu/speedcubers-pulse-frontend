@@ -2,7 +2,7 @@
 
 Red social para speedcubers españoles: competencias 1v1 en tiempo real con videoconferencia, rankings y presencia online. Proyecto de Fin de Master — MVP en 8 semanas.
 
-**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B, 6, 7A, 7B-1, 7B-2 y 7B-3 completadas. Fase 7C-1 en curso: workflow manual Playwright pre-release validation, hardening de sesión y optimización de carga inicial.
+**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B, 6, 7A, 7B-1, 7B-2, 7B-3, 7C-1 y 7C-2A completadas. Fase 7C-2B pendiente: lógica de inspección, penalizaciones automáticas y marcador de rondas.
 
 ## Arquitectura
 
@@ -134,8 +134,8 @@ npm run lint:fix     # Auto-fix
 - **Route coverage tests** (`src/components/__tests__/App.test.jsx`): 12 tests que verifican que todas las rutas públicas y protegidas existen. Si se pierden archivos en un merge, los tests fallan inmediatamente.
 - **Forgot/Reset password**: `ForgotPasswordPage` (anti-enumeración, siempre muestra éxito) y `ResetPasswordPage` (lee `?token=` de la URL, valida contraseña + confirmación, redirige a `/login` con mensaje de éxito).
 - **WCA ID inmutable en perfil**: `EditProfileForm` muestra el WCA ID vinculado como solo lectura con icono de candado. Si no hay WCA ID, muestra input con validación de formato antes de llamar al backend.
-- **Video room** (`src/features/video/VideoRoomPage.jsx`): ruta protegida `/compete`, crea o une sala mediante `competitionService`, solicita token RTC a `POST /video/token` con el `channelName` de backend, entra al canal con Agora Web SDK, publica cámara/micrófono, renderiza preview local y stream remoto, muestra timer cuando la sala está activa, permite enviar resultado por ronda, refresca la sala mientras espera al rival y limpia tracks al salir.
-- **Competition timer** (`src/features/timer/CompetitionTimerPanel.jsx`): timer local con `performance.now()`. La barra espaciadora inicia/para; al parar aparecen `OK`, `+2` y `DNF`, y cualquiera de esas acciones envía el resultado al backend. Tras enviar, bloquea el timer hasta que la ronda se resuelve o se detecta la siguiente ronda activa.
+- **Video room** (`src/features/video/VideoRoomPage.jsx`): ruta protegida `/compete`, crea o une sala mediante `competitionService`, solicita token RTC a `POST /video/token` con el `channelName` de backend, entra al canal con Agora Web SDK, publica cámara/micrófono, renderiza preview local y stream remoto. Mientras espera rival mantiene el código visible y permite copiarlo; cuando la sala está `active`, cambia a vista tipo videollamada con rival como vídeo principal, cámara propia flotante, detalles técnicos plegados y timer en panel lateral.
+- **Competition timer** (`src/features/timer/CompetitionTimerPanel.jsx`): timer local con `performance.now()`. La barra espaciadora inicia/para; `Tab` queda reservado para navegación de teclado. Al parar aparecen `OK`, `+2` y `DNF`, y cualquiera de esas acciones envía el resultado al backend. El panel muestra scramble cuando la ronda activa lo incluye, usa roles accesibles para estado/error y bloquea el timer hasta que la ronda se resuelve o se detecta la siguiente ronda activa.
 - **Presence connection** (`src/features/presence/PresenceConnection.jsx`): conecta Socket.io cuando existe `accessToken`, envía heartbeat cada 30s, recibe eventos `presence:online`/`presence:offline` y actualiza `presenceSlice`.
 - **Playwright auth/session E2E** (`e2e/flows/auth-session.spec.js`): registra un usuario único, valida sesión tras recarga por `POST /auth/refresh`, confirma que no hay tokens en `localStorage`/`sessionStorage`, prueba logout, redirección protegida y login posterior.
 - **Playwright ranking/profile E2E** (`e2e/flows/ranking-profile.spec.js`): valida ranking público, filtro de evento `2x2`, enlace a perfil público y ausencia de email privado.
@@ -178,7 +178,9 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 | 7B-1 | Playwright auth/session E2E foundation | ✅ |
 | 7B-2 | Playwright ranking/profile E2E | ✅ |
 | 7B-3 | Playwright competition 1v1 E2E | ✅ |
-| 7C-1 | Manual Playwright pre-release validation + pre-deploy hardening | ⏳ |
+| 7C-1 | Manual Playwright pre-release validation + pre-deploy hardening | ✅ |
+| 7C-2A | Pulido visual/accesibilidad de sala activa en `/compete` | ✅ |
+| 7C-2B | Lógica de inspección, penalizaciones y marcador | ⏳ |
 | 7 | Integración, e2e, polish | — |
 | 8 | Deployment (Railway/Vercel) | — |
 

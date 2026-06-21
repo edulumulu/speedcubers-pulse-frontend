@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mockup - Sala de competición activa</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #050a0f;
+      --surface: #080f17;
+      --panel: #0b1420;
+      --border: #163049;
+      --border-soft: #102236;
+      --text: #e2f0ff;
+      --muted: #8ba6bf;
+      --accent: #22d3ee;
+      --green: #34d399;
+      --amber: #fbbf24;
+      --red: #f87171;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button,
+    summary {
+      font: inherit;
+    }
+
+    .page {
+      min-height: 100vh;
+      padding: 18px;
+    }
+
+    .shell {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      background: var(--surface);
+      padding: 12px 14px;
+    }
+
+    .room-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 16px rgba(52, 211, 153, 0.6);
+      flex: 0 0 auto;
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 16px;
+      line-height: 1.25;
+    }
+
+    .meta {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .details {
+      position: relative;
+    }
+
+    .details summary {
+      list-style: none;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      background: #07101a;
+      padding: 9px 12px;
+      font-size: 13px;
+    }
+
+    .details summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .details[open] summary {
+      color: var(--text);
+      border-color: rgba(34, 211, 238, 0.45);
+    }
+
+    .details-panel {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      z-index: 20;
+      min-width: 280px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #07101a;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      padding: 12px;
+    }
+
+    .details-grid {
+      display: grid;
+      gap: 10px;
+      font-size: 12px;
+    }
+
+    .details-grid dt {
+      color: var(--muted);
+    }
+
+    .details-grid dd {
+      margin: 3px 0 0;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      overflow-wrap: anywhere;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 380px;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .stage {
+      position: relative;
+      min-height: 620px;
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(34, 211, 238, 0.06), transparent 30%),
+        #03070d;
+    }
+
+    .remote-video {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 50% 38%, rgba(34, 211, 238, 0.16), transparent 26%),
+        linear-gradient(145deg, #08131f, #03070d 62%);
+    }
+
+    .remote-person {
+      width: min(280px, 38vw);
+      aspect-ratio: 1;
+      border-radius: 999px;
+      border: 1px solid rgba(34, 211, 238, 0.28);
+      background:
+        linear-gradient(180deg, rgba(226, 240, 255, 0.14), rgba(226, 240, 255, 0.02)),
+        #0c1824;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .video-label {
+      position: absolute;
+      left: 18px;
+      top: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(226, 240, 255, 0.12);
+      border-radius: 999px;
+      background: rgba(5, 10, 15, 0.74);
+      padding: 7px 10px;
+      font-size: 13px;
+      backdrop-filter: blur(10px);
+    }
+
+    .self-video {
+      position: absolute;
+      right: 18px;
+      bottom: 18px;
+      width: min(220px, 30vw);
+      aspect-ratio: 16 / 10;
+      border: 1px solid rgba(226, 240, 255, 0.18);
+      border-radius: 8px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 28%, rgba(52, 211, 153, 0.18), transparent 26%),
+        linear-gradient(145deg, #0b1722, #050a0f);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.36);
+    }
+
+    .self-video span {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      border-radius: 999px;
+      background: rgba(5, 10, 15, 0.7);
+      color: var(--text);
+      padding: 5px 8px;
+      font-size: 12px;
+    }
+
+    .side {
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .panel {
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      background: var(--surface);
+      padding: 14px;
+    }
+
+    .eyebrow {
+      color: var(--accent);
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .state-nav {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+
+    .state-button {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #07101a;
+      color: var(--muted);
+      padding: 8px 6px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .state-button.active {
+      border-color: rgba(34, 211, 238, 0.55);
+      color: var(--text);
+      background: rgba(34, 211, 238, 0.08);
+    }
+
+    .state-panel {
+      display: none;
+    }
+
+    .state-panel.active {
+      display: block;
+    }
+
+    .center-stage {
+      min-height: 370px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+
+    .scramble-wrap {
+      width: 100%;
+    }
+
+    .scramble {
+      border: 1px solid rgba(34, 211, 238, 0.25);
+      border-radius: 8px;
+      background: rgba(34, 211, 238, 0.06);
+      padding: 22px;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 26px;
+      line-height: 1.45;
+      text-align: center;
+      overflow-wrap: anywhere;
+    }
+
+    .primary {
+      width: 100%;
+      margin-top: 14px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #031017;
+      cursor: default;
+      padding: 13px 14px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .inspection-number,
+    .solve-number,
+    .final-word {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .inspection-number {
+      font-size: clamp(112px, 18vw, 210px);
+    }
+
+    .solve-number {
+      font-size: clamp(68px, 9vw, 118px);
+    }
+
+    .scoreboard {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: end;
+      gap: 18px;
+      width: 100%;
+    }
+
+    .score-player {
+      display: grid;
+      justify-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .score-avatar,
+    .review-avatar {
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      border: 1px solid rgba(226, 240, 255, 0.16);
+      background: linear-gradient(180deg, rgba(226, 240, 255, 0.12), rgba(226, 240, 255, 0.03));
+      color: var(--text);
+      font-weight: 800;
+    }
+
+    .score-avatar {
+      width: 54px;
+      height: 54px;
+      font-size: 18px;
+    }
+
+    .score-name {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .score-number,
+    .score-separator {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .score-number {
+      font-size: clamp(64px, 9vw, 112px);
+      color: var(--text);
+    }
+
+    .score-separator {
+      color: var(--muted);
+      font-size: clamp(44px, 6vw, 72px);
+      padding-bottom: 8px;
+    }
+
+    .phase-copy {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .timer-card {
+      display: grid;
+      gap: 12px;
+      text-align: center;
+    }
+
+    .timer-phase {
+      display: inline-flex;
+      justify-self: center;
+      border: 1px solid rgba(251, 191, 36, 0.28);
+      border-radius: 999px;
+      background: rgba(251, 191, 36, 0.1);
+      color: #fcd34d;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .timer-help {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .signals {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .signal {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      background: #07101a;
+      font-size: 12px;
+    }
+
+    .signal strong {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .signal span {
+      color: var(--muted);
+    }
+
+    .signal.warn {
+      border-color: rgba(251, 191, 36, 0.3);
+    }
+
+    .signal.danger {
+      border-color: rgba(248, 113, 113, 0.34);
+    }
+
+    .results {
+      display: grid;
+      gap: 8px;
+    }
+
+    .result-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #07101a;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    .result-row strong {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .resolution {
+      border-color: rgba(52, 211, 153, 0.28);
+      background: rgba(52, 211, 153, 0.08);
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .action {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #07101a;
+      color: var(--text);
+      padding: 14px 12px;
+      cursor: default;
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .action.ok {
+      border-color: rgba(52, 211, 153, 0.42);
+      color: #86efac;
+      background: rgba(52, 211, 153, 0.08);
+    }
+
+    .action.warn {
+      border-color: rgba(251, 191, 36, 0.4);
+      color: #fcd34d;
+    }
+
+    .action.danger {
+      border-color: rgba(248, 113, 113, 0.4);
+      color: #fca5a5;
+    }
+
+    .review-list {
+      display: grid;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .review-card {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      text-align: left;
+    }
+
+    .review-card.rival {
+      background: rgba(34, 211, 238, 0.06);
+      border-color: rgba(34, 211, 238, 0.24);
+    }
+
+    .review-card.self {
+      background: rgba(52, 211, 153, 0.06);
+      border-color: rgba(52, 211, 153, 0.24);
+    }
+
+    .review-avatar {
+      width: 48px;
+      height: 48px;
+      font-size: 16px;
+    }
+
+    .review-name {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .review-time {
+      margin-top: 4px;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 34px;
+      line-height: 1;
+    }
+
+    .mobile-note {
+      display: none;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    @media (max-width: 960px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .stage {
+        min-height: 420px;
+      }
+
+      .side {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .page {
+        padding: 10px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+      }
+
+      .details-panel {
+        right: auto;
+        left: 0;
+        min-width: min(88vw, 320px);
+      }
+
+      .stage {
+        min-height: 340px;
+      }
+
+      .self-video {
+        width: 148px;
+        right: 10px;
+        bottom: 10px;
+      }
+
+      .video-label {
+        left: 10px;
+        top: 10px;
+      }
+
+      .scramble {
+        font-size: 16px;
+      }
+
+      .signals,
+      .state-nav,
+      .scoreboard,
+      .actions {
+        grid-template-columns: 1fr;
+      }
+
+      .mobile-note {
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="shell">
+      <header class="topbar">
+        <div class="room-title">
+          <span class="status-dot" aria-hidden="true"></span>
+          <div>
+            <h1>Sala 1v1 · Ronda 4</h1>
+            <p class="meta">Rival conectado · competición activa</p>
+          </div>
+        </div>
+
+        <div class="top-actions">
+          <details class="details">
+            <summary>Detalles de sala ▾</summary>
+            <div class="details-panel">
+              <dl class="details-grid">
+                <div>
+                  <dt>Código</dt>
+                  <dd>A4R8T5</dd>
+                </div>
+                <div>
+                  <dt>Canal</dt>
+                  <dd>match-a4r8t5</dd>
+                </div>
+                <div>
+                  <dt>UID</dt>
+                  <dd>3025571201</dd>
+                </div>
+                <div>
+                  <dt>Estado</dt>
+                  <dd>Rival conectado</dd>
+                </div>
+              </dl>
+            </div>
+          </details>
+        </div>
+      </header>
+
+      <section class="layout" aria-label="Maqueta de sala activa">
+        <div class="stage">
+          <div class="remote-video">
+            <div class="remote-person">Video rival</div>
+          </div>
+          <div class="video-label">
+            <span class="status-dot" aria-hidden="true"></span>
+            Rival · margallego
+          </div>
+          <div class="self-video">
+            <span>Tu cámara</span>
+          </div>
+        </div>
+
+        <aside class="side" aria-live="polite">
+          <nav class="state-nav" aria-label="Fases de la ronda">
+            <button class="state-button active" type="button" data-state-target="scramble">1 Mezcla</button>
+            <button class="state-button" type="button" data-state-target="inspection">2 Inspección</button>
+            <button class="state-button" type="button" data-state-target="solve">3 Solve</button>
+            <button class="state-button" type="button" data-state-target="review">4 Resultados</button>
+            <button class="state-button" type="button" data-state-target="final">5 Final</button>
+          </nav>
+
+          <section class="panel state-panel active" data-state="scramble">
+            <div class="center-stage">
+              <div class="scramble-wrap">
+                <div class="scramble">R U R' F2 D L2 B' U2 R2 F D' L U'</div>
+                <button class="primary" type="button" data-next-state="inspection">Comenzar inspección</button>
+                <p class="phase-copy">También se puede comenzar con la barra espaciadora.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel state-panel" data-state="inspection">
+            <div class="center-stage">
+              <div>
+                <div class="timer-phase">Inspección</div>
+                <div class="inspection-number">8</div>
+                <p class="phase-copy">Aviso de voz en 8s y 12s. Espacio para iniciar el solve.</p>
+              </div>
+            </div>
+            <div class="signals">
+              <div class="signal warn">
+                <strong>8s</strong>
+                <span>Voz: “8 segundos”</span>
+              </div>
+              <div class="signal warn">
+                <strong>12s</strong>
+                <span>Voz: “12 segundos”</span>
+              </div>
+              <div class="signal danger">
+                <strong>17s</strong>
+                <span>DNF automático</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel state-panel" data-state="solve">
+            <div class="center-stage">
+              <div>
+                <div class="timer-phase" style="border-color: rgba(52, 211, 153, 0.28); background: rgba(52, 211, 153, 0.1); color: #86efac;">Solve</div>
+                <div class="solve-number">12.438</div>
+                <p class="phase-copy">Espacio para parar el cronómetro en tu pantalla.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel state-panel" data-state="review">
+            <div class="center-stage" style="min-height: 250px;">
+              <div style="width: 100%;">
+                <div class="review-list">
+                  <div class="review-card self">
+                    <div class="review-avatar">T</div>
+                    <div>
+                      <div class="review-name">Tú</div>
+                      <div class="review-time">12.438</div>
+                    </div>
+                  </div>
+                  <div class="review-card rival">
+                    <div class="review-avatar">M</div>
+                    <div>
+                      <div class="review-name">margallego</div>
+                      <div class="review-time">13.102</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="actions">
+                  <button class="action ok" type="button">OK</button>
+                  <button class="action warn" type="button">+2</button>
+                  <button class="action danger" type="button">DNF</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel state-panel" data-state="final">
+            <div class="center-stage">
+              <div style="width: 100%;">
+                <div class="scoreboard">
+                  <div class="score-player">
+                    <div class="score-avatar">T</div>
+                    <div class="score-name">Tú</div>
+                    <div class="score-number">5</div>
+                  </div>
+                  <div class="score-separator">-</div>
+                  <div class="score-player">
+                    <div class="score-avatar">M</div>
+                    <div class="score-name">margallego</div>
+                    <div class="score-number">4</div>
+                  </div>
+                </div>
+                <p class="phase-copy">Marcador acumulado de rondas. Se muestra un momento y después entra la nueva mezcla.</p>
+              </div>
+            </div>
+          </section>
+
+          <p class="mobile-note">En móvil, la misma jerarquía se apila: rival, tu cámara flotante y debajo mezcla/timer.</p>
+        </aside>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const states = ['scramble', 'inspection', 'solve', 'review', 'final'];
+    let currentStateIndex = 0;
+
+    function setState(nextState) {
+      const nextIndex = states.indexOf(nextState);
+      if (nextIndex === -1) return;
+      currentStateIndex = nextIndex;
+
+      document.querySelectorAll('[data-state]').forEach((panel) => {
+        panel.classList.toggle('active', panel.dataset.state === nextState);
+      });
+
+      document.querySelectorAll('[data-state-target]').forEach((button) => {
+        button.classList.toggle('active', button.dataset.stateTarget === nextState);
+      });
+    }
+
+    document.querySelectorAll('[data-state-target]').forEach((button) => {
+      button.addEventListener('click', () => setState(button.dataset.stateTarget));
+    });
+
+    document.querySelectorAll('[data-next-state]').forEach((button) => {
+      button.addEventListener('click', () => setState(button.dataset.nextState));
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.code !== 'Space') return;
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      event.preventDefault();
+      const nextIndex = (currentStateIndex + 1) % states.length;
+      setState(states[nextIndex]);
+    });
+  </script>
+</body>
+</html>
