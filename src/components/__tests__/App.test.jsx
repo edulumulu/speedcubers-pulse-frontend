@@ -125,9 +125,9 @@ describe('protected routes — authenticated', () => {
     expect(screen.getByRole('heading', { name: /mi perfil/i })).toBeInTheDocument();
   });
 
-  it('/compete renders video room page when authenticated', () => {
+  it('/compete renders video room page when authenticated', async () => {
     renderAt('/compete', authUser);
-    expect(screen.getByRole('heading', { name: /sala de video/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /sala de video/i })).toBeInTheDocument();
   });
 
   it('/login redirects to / when already authenticated', () => {
