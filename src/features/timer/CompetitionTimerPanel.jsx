@@ -130,7 +130,11 @@ export function CompetitionTimerPanel({
   const activeRoundNumber = activeRound?.number ?? null;
 
   return (
-    <section className="border border-border bg-surface rounded-lg p-4" aria-labelledby="competition-timer-title">
+    <section
+      className="border border-border bg-surface rounded-lg p-4"
+      aria-labelledby="competition-timer-title"
+      data-testid="competition-timer"
+    >
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
           <p className="form-label mb-1">Timer local</p>
@@ -141,13 +145,13 @@ export function CompetitionTimerPanel({
             <p className="text-xs text-muted mt-1">Ronda {activeRoundNumber}</p>
           )}
         </div>
-        <span className={isRunning ? 'badge-green' : 'badge-cyan'}>
+        <span className={isRunning ? 'badge-green' : 'badge-cyan'} data-testid="timer-status">
           {isRunning ? 'Cronometrando' : isWaitingForOpponent ? 'Esperando rival' : 'Listo'}
         </span>
       </div>
 
       <div className="mt-5 rounded-md border border-border-light bg-bg px-4 py-5 text-center">
-        <div className="font-mono text-5xl sm:text-6xl leading-none" aria-live="polite">
+        <div className="font-mono text-5xl sm:text-6xl leading-none" aria-live="polite" data-testid="timer-display">
           {isDnf ? 'DNF' : formatSolveTime(elapsedMs)}
         </div>
         <p className="text-xs text-muted mt-3">Barra espaciadora para iniciar o parar</p>
@@ -159,13 +163,17 @@ export function CompetitionTimerPanel({
           type="button"
           onClick={handleToggleTimer}
           disabled={isSubmitting || isWaitingForOpponent}
+          data-testid="timer-toggle-button"
         >
           {isRunning ? 'Parar' : 'Iniciar'}
         </button>
       </div>
 
       {isWaitingForOpponent && (
-        <div className="mt-4 rounded-md border border-cyan-400/20 bg-cyan-400/10 px-3 py-2.5 text-sm text-cyan-300">
+        <div
+          className="mt-4 rounded-md border border-cyan-400/20 bg-cyan-400/10 px-3 py-2.5 text-sm text-cyan-300"
+          data-testid="waiting-opponent-message"
+        >
           Resultado enviado. Esperando a que el rival cierre esta ronda.
         </div>
       )}
@@ -183,6 +191,7 @@ export function CompetitionTimerPanel({
             type="button"
             onClick={() => handleSubmit('none')}
             disabled={isSubmitting}
+            data-testid="submit-ok-button"
           >
             {isSubmitting ? 'Enviando...' : 'OK'}
           </button>
@@ -191,6 +200,7 @@ export function CompetitionTimerPanel({
             type="button"
             onClick={() => handleSubmit('+2')}
             disabled={isSubmitting}
+            data-testid="submit-plus-two-button"
           >
             +2
           </button>
@@ -199,6 +209,7 @@ export function CompetitionTimerPanel({
             type="button"
             onClick={() => handleSubmit('dnf')}
             disabled={isSubmitting}
+            data-testid="submit-dnf-button"
           >
             DNF
           </button>
@@ -206,7 +217,10 @@ export function CompetitionTimerPanel({
       )}
 
       {submittedResult && (
-        <div className="mt-4 rounded-md border border-emerald-400/20 bg-emerald-400/10 px-3 py-2.5 text-sm text-emerald-400">
+        <div
+          className="mt-4 rounded-md border border-emerald-400/20 bg-emerald-400/10 px-3 py-2.5 text-sm text-emerald-400"
+          data-testid="result-success"
+        >
           Resultado enviado: {formatSolveTime(submittedTime)}
           {submittedPenalty === '+2' ? ' (+2)' : ''}
           {submittedPenalty === 'dnf' ? ' (DNF)' : ''}
@@ -214,7 +228,7 @@ export function CompetitionTimerPanel({
       )}
 
       {resolution?.status === 'completed' && (
-        <div className="mt-4 rounded-md border border-border bg-bg px-3 py-2.5 text-sm">
+        <div className="mt-4 rounded-md border border-border bg-bg px-3 py-2.5 text-sm" data-testid="round-resolution">
           <p className="font-semibold text-foreground">Ronda resuelta</p>
           <p className="text-muted mt-1">
             Gana {resolution.winner?.username ?? 'competidor'} con {formatSolveTime(resultFinalTime(resolution.winnerResult))}.
@@ -228,14 +242,17 @@ export function CompetitionTimerPanel({
       )}
 
       {resolution?.status === 'draw' && (
-        <div className="mt-4 rounded-md border border-border bg-bg px-3 py-2.5 text-sm">
+        <div className="mt-4 rounded-md border border-border bg-bg px-3 py-2.5 text-sm" data-testid="round-resolution">
           <p className="font-semibold text-foreground">Ronda empatada</p>
           <p className="text-muted mt-1">No se actualiza el Elo en esta ronda.</p>
         </div>
       )}
 
       {submitError && (
-        <div className="mt-4 rounded-md border border-red-400/20 bg-red-400/10 px-3 py-2.5 text-sm text-red-400">
+        <div
+          className="mt-4 rounded-md border border-red-400/20 bg-red-400/10 px-3 py-2.5 text-sm text-red-400"
+          data-testid="result-error"
+        >
           {submitError}
         </div>
       )}

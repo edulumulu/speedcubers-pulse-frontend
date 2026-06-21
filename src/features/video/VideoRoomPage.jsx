@@ -126,7 +126,7 @@ export function VideoRoomPage() {
   }
 
   return (
-    <main className="min-h-[calc(100vh-65px)] max-w-6xl mx-auto px-4 py-6">
+    <main className="min-h-[calc(100vh-65px)] max-w-6xl mx-auto px-4 py-6" data-testid="compete-page">
       <div className="flex flex-col gap-6">
         <header className="border-b border-border/50 pb-4">
           <p className="text-xs font-mono uppercase text-accent tracking-widest">Fase 4</p>
@@ -138,7 +138,13 @@ export function VideoRoomPage() {
           <div className="card">
             <div className="mb-5">
               <p className="form-label mb-2">Crear sala</p>
-              <button className="btn-primary" type="button" onClick={handleCreateRoom} disabled={controlsDisabled}>
+              <button
+                className="btn-primary"
+                type="button"
+                onClick={handleCreateRoom}
+                disabled={controlsDisabled}
+                data-testid="create-room-button"
+              >
                 {competitionStatus === 'loading'
                   ? 'Creando sala...'
                   : status === 'loading'
@@ -160,7 +166,12 @@ export function VideoRoomPage() {
                   required
                 />
 
-                <button className="btn-secondary" type="submit" disabled={controlsDisabled}>
+                <button
+                  className="btn-secondary"
+                  type="submit"
+                  disabled={controlsDisabled}
+                  data-testid="join-room-button"
+                >
                   {competitionStatus === 'loading'
                     ? 'Entrando...'
                     : status === 'loading'
@@ -177,7 +188,7 @@ export function VideoRoomPage() {
             )}
 
             {hasCompetitionRoom && (
-              <button className="btn-secondary mt-3" type="button" onClick={handleLeave}>
+              <button className="btn-secondary mt-3" type="button" onClick={handleLeave} data-testid="leave-room-button">
                 Salir de la sala
               </button>
             )}
@@ -186,7 +197,7 @@ export function VideoRoomPage() {
           <div className="border border-border bg-surface rounded-lg overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-b border-border">
               <div>
-                <h2 className="text-base font-semibold">
+                <h2 className="text-base font-semibold" data-testid="room-title">
                   {roomCode ? `Sala ${roomCode}` : 'Esperando sala de competencia'}
                 </h2>
                 <p className="text-xs text-muted">
@@ -199,13 +210,16 @@ export function VideoRoomPage() {
                         : 'Crea una sala o únete con un código.'}
                 </p>
               </div>
-              <span className={isConnectedRtc ? 'badge-green' : 'badge-cyan'}>
+              <span className={isConnectedRtc ? 'badge-green' : 'badge-cyan'} data-testid="rtc-status">
                 {rtcStatusLabel()}
               </span>
             </div>
 
             <div className="grid md:grid-cols-2 gap-3 p-4">
-              <div className="aspect-video rounded-md border border-border-light bg-bg overflow-hidden relative">
+              <div
+                className="aspect-video rounded-md border border-border-light bg-bg overflow-hidden relative"
+                aria-label="Video local"
+              >
                 <div ref={localVideoRef} className="absolute inset-0" data-testid="local-video" />
                 {!isConnectedRtc && (
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -221,7 +235,10 @@ export function VideoRoomPage() {
                   <span className="absolute left-3 top-3 badge-green">Tú</span>
                 )}
               </div>
-              <div className="aspect-video rounded-md border border-border-light bg-bg overflow-hidden relative">
+              <div
+                className="aspect-video rounded-md border border-border-light bg-bg overflow-hidden relative"
+                aria-label="Video rival"
+              >
                 {remoteUsers[0] ? (
                   <>
                     <div
@@ -248,15 +265,15 @@ export function VideoRoomPage() {
               <dl className="grid sm:grid-cols-3 gap-3 px-4 pb-4 text-sm">
                 <div className="border border-border rounded-md p-3">
                   <dt className="text-xs text-muted">Código</dt>
-                  <dd className="mt-1 font-mono text-xs break-all">{roomCode || 'Sin código'}</dd>
+                  <dd className="mt-1 font-mono text-xs break-all" data-testid="room-code">{roomCode || 'Sin código'}</dd>
                 </div>
                 <div className="border border-border rounded-md p-3">
                   <dt className="text-xs text-muted">Canal</dt>
-                  <dd className="mt-1 font-mono text-xs break-all">{room.channelName}</dd>
+                  <dd className="mt-1 font-mono text-xs break-all" data-testid="room-channel">{room.channelName}</dd>
                 </div>
                 <div className="border border-border rounded-md p-3">
                   <dt className="text-xs text-muted">UID</dt>
-                  <dd className="mt-1 font-mono text-xs">{room.uid ?? 'auto'}</dd>
+                  <dd className="mt-1 font-mono text-xs" data-testid="room-uid">{room.uid ?? 'auto'}</dd>
                 </div>
               </dl>
             )}
@@ -270,7 +287,7 @@ export function VideoRoomPage() {
             <p className="text-sm text-muted mt-1">
               El cronómetro se activa cuando otro cuber entra con el código de sala.
             </p>
-            <button className="btn-secondary mt-4" type="button" onClick={handleRefreshRoom}>
+            <button className="btn-secondary mt-4" type="button" onClick={handleRefreshRoom} data-testid="refresh-room-button">
               Actualizar sala
             </button>
           </section>
