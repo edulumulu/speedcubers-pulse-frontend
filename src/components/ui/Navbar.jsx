@@ -12,14 +12,14 @@ export function Navbar() {
   const isPresenceLive = presenceStatus === 'connected';
 
   return (
-    <nav className="flex justify-between items-center px-8 py-4 border-b border-border bg-bg sticky top-0 z-10">
-      <Link to="/" className="font-mono text-sm text-[#e2f0ff] tracking-tight">
+    <nav className="flex flex-wrap justify-between items-center gap-3 px-4 sm:px-8 py-4 border-b border-border bg-bg sticky top-0 z-10">
+      <Link to="/" className="font-mono text-sm text-[#e2f0ff] tracking-tight focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded-sm">
         speed<span className="text-accent">cubers</span>.pulse
       </Link>
 
-      <div className="flex items-center gap-6">
+      <div className="flex flex-wrap items-center justify-end gap-3 sm:gap-6">
         <NavLink to="/ranking" className={({ isActive }) =>
-          `text-sm transition-colors ${isActive ? 'text-[#e2f0ff]' : 'text-muted hover:text-[#e2f0ff]'}`
+          `text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded-sm ${isActive ? 'text-[#e2f0ff]' : 'text-muted hover:text-[#e2f0ff]'}`
         }>
           Ranking
         </NavLink>
@@ -27,7 +27,7 @@ export function Navbar() {
         {isAuth ? (
           <>
             <details className="relative group">
-              <summary className="list-none cursor-pointer text-sm text-muted hover:text-[#e2f0ff] transition-colors">
+              <summary className="list-none cursor-pointer text-sm text-muted hover:text-[#e2f0ff] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded-sm">
                 <span
                   className={`inline-block h-2 w-2 rounded-full mr-2 ${
                     isPresenceLive ? 'bg-green-400' : 'bg-muted'
@@ -52,13 +52,13 @@ export function Navbar() {
               </div>
             </details>
             <NavLink to="/profile" className={({ isActive }) =>
-              `text-sm transition-colors ${isActive ? 'text-[#e2f0ff]' : 'text-muted hover:text-[#e2f0ff]'}`
+              `text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded-sm ${isActive ? 'text-[#e2f0ff]' : 'text-muted hover:text-[#e2f0ff]'}`
             }>
               {user?.username ?? 'Mi perfil'}
             </NavLink>
             <button
               onClick={() => dispatch(logout())}
-              className="text-sm text-muted hover:text-[#e2f0ff] transition-colors"
+              className="text-sm text-muted hover:text-[#e2f0ff] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded-sm"
             >
               Salir
             </button>
@@ -68,7 +68,7 @@ export function Navbar() {
           </>
         ) : (
           <>
-            <Link to="/login" className="text-sm text-muted hover:text-[#e2f0ff] transition-colors">
+            <Link to="/login" className="text-sm text-muted hover:text-[#e2f0ff] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent rounded-sm">
               Login
             </Link>
             <Link to="/register" className="btn-primary w-auto px-5 py-2">

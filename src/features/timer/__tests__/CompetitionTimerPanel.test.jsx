@@ -43,7 +43,7 @@ describe('CompetitionTimerPanel', () => {
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByText(/revisa el resultado/i)).toBeInTheDocument();
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^ok$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /sin penalización/i }));
     });
 
     expect(onSubmit).toHaveBeenCalledWith({ timeMs: 1500, penalty: 'none' });
@@ -65,7 +65,7 @@ describe('CompetitionTimerPanel', () => {
       fireEvent.click(screen.getByRole('button', { name: /^parar$/i }));
     });
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^\+2$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /penalización de 2 segundos/i }));
     });
 
     expect(onSubmit).toHaveBeenCalledWith({ timeMs: 8765, penalty: '+2' });
@@ -78,7 +78,7 @@ describe('CompetitionTimerPanel', () => {
 
     render(<CompetitionTimerPanel roomCode="ABC123" now={now} onSubmit={onSubmit} />);
 
-    expect(screen.queryByRole('button', { name: /^dnf$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /enviar resultado dnf/i })).not.toBeInTheDocument();
 
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: /iniciar/i }));
@@ -88,7 +88,7 @@ describe('CompetitionTimerPanel', () => {
       fireEvent.click(screen.getByRole('button', { name: /^parar$/i }));
     });
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^dnf$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /enviar resultado dnf/i }));
     });
 
     await waitFor(() => {
@@ -107,7 +107,8 @@ describe('CompetitionTimerPanel', () => {
     );
 
     expect(screen.getByRole('button', { name: /iniciar/i })).toBeDisabled();
-    expect(screen.getByText('Resultado enviado: 12.345 (+2)')).toBeInTheDocument();
+    expect(screen.getByText('Último resultado enviado')).toBeInTheDocument();
+    expect(screen.getByText('12.345 (+2)')).toBeInTheDocument();
 
     rerender(
       <CompetitionTimerPanel
@@ -133,8 +134,21 @@ describe('CompetitionTimerPanel', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: /iniciar/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /esperando rival/i })).toBeDisabled();
     expect(screen.getByText(/esperando a que el rival cierre esta ronda/i)).toBeInTheDocument();
+  });
+
+  it('does not start the timer with Tab navigation', () => {
+    const onSubmit = vi.fn();
+
+    render(<CompetitionTimerPanel roomCode="ABC123" onSubmit={onSubmit} />);
+
+    act(() => {
+      fireEvent.keyDown(document, { key: 'Tab', code: 'Tab' });
+    });
+
+    expect(screen.getByTestId('timer-display')).toHaveTextContent('0.000');
+    expect(screen.getByRole('button', { name: /iniciar/i })).toBeEnabled();
   });
 
   it('renders the resolved round summary with Elo changes', () => {
@@ -169,7 +183,7 @@ describe('CompetitionTimerPanel', () => {
     render(
       <CompetitionTimerPanel
         roomCode="ABC123"
-        activeRound={{ id: 'round-2', number: 2, status: 'active' }}
+        activeRound={{ id: 'round-2', number: 2, scramble: 'R U R\' U\'', status: 'active' }}
         latestCompletedRound={{
           id: 'round-1',
           number: 1,
@@ -183,6 +197,7 @@ describe('CompetitionTimerPanel', () => {
     );
 
     expect(screen.getByText('Ronda 2')).toBeInTheDocument();
+    expect(screen.getByText('R U R\' U\'')).toBeInTheDocument();
     expect(screen.getByText('Ronda empatada')).toBeInTheDocument();
   });
 });

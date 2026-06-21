@@ -127,7 +127,7 @@ describe('protected routes — authenticated', () => {
 
   it('/compete renders video room page when authenticated', async () => {
     renderAt('/compete', authUser);
-    expect(await screen.findByRole('heading', { name: /sala de video/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /sala de competición/i }, { timeout: 5000 })).toBeInTheDocument();
   });
 
   it('/login redirects to / when already authenticated', () => {

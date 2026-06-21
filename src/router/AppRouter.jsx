@@ -32,7 +32,13 @@ export function AppRouter() {
           path="/compete"
           element={(
             <ProtectedRoute>
-              <Suspense fallback={null}>
+              <Suspense fallback={(
+                <main className="min-h-[calc(100vh-65px)] max-w-6xl mx-auto px-4 py-6">
+                  <div className="border border-border bg-surface rounded-lg p-4 text-sm text-muted" role="status">
+                    Cargando sala...
+                  </div>
+                </main>
+              )}>
                 <VideoRoomPage />
               </Suspense>
             </ProtectedRoute>

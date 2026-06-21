@@ -27,6 +27,13 @@ function roundNumber(round) {
   return round?.number ?? round?.round_number ?? null;
 }
 
+function roomStatusCopy({ isConnectedRtc, isJoiningRtc, isReady }) {
+  if (isConnectedRtc) return 'Cámara y micrófono conectados a la sala.';
+  if (isJoiningRtc) return 'Pidiendo permisos y entrando a la sala.';
+  if (isReady) return 'La cámara está lista para competir.';
+  return 'Crea una sala o únete con un código.';
+}
+
 export function VideoRoomPage() {
   const dispatch = useDispatch();
   const competitionRoom = useSelector(selectCompetitionRoom);
@@ -39,6 +46,7 @@ export function VideoRoomPage() {
   const status = useSelector(selectVideoStatus);
   const error = useSelector(selectVideoError);
   const [joinCode, setJoinCode] = useState('');
+  const [copyStatus, setCopyStatus] = useState('idle');
   const {
     localVideoRef,
     remoteUsers,
@@ -75,6 +83,10 @@ export function VideoRoomPage() {
 
     return () => window.clearInterval(intervalId);
   }, [dispatch, isCompetitionActive, isWaitingForNextRound, roomCode]);
+
+  useEffect(() => {
+    setCopyStatus('idle');
+  }, [roomCode]);
 
   async function openVideoRoom(roomAction) {
     try {
@@ -118,127 +130,234 @@ export function VideoRoomPage() {
     dispatch(refreshCompetitionRoom({ code: roomCode }));
   }
 
+  async function handleCopyRoomCode() {
+    if (!roomCode || !navigator.clipboard) return;
+    await navigator.clipboard.writeText(roomCode);
+    setCopyStatus('copied');
+  }
+
   function rtcStatusLabel() {
-    if (rtcStatus === 'joining') return 'Conectando RTC';
+    if (rtcStatus === 'joining') return 'Conectando cámara';
     if (rtcStatus === 'connected') return remoteUsers.length ? 'Rival conectado' : 'En directo';
-    if (rtcStatus === 'failed') return 'Error RTC';
-    return isReady ? 'Token listo' : roomCode ? 'Sala creada' : 'Waiting room';
+    if (rtcStatus === 'failed') return 'Error de video';
+    return isReady ? 'Sala preparada' : roomCode ? 'Sala creada' : 'Sin sala';
   }
 
   return (
-    <main className="min-h-[calc(100vh-65px)] max-w-6xl mx-auto px-4 py-6" data-testid="compete-page">
+    <main className="min-h-[calc(100vh-65px)] max-w-7xl mx-auto px-4 py-6" data-testid="compete-page">
       <div className="flex flex-col gap-6">
         <header className="border-b border-border/50 pb-4">
-          <p className="text-xs font-mono uppercase text-accent tracking-widest">Fase 4</p>
-          <h1 className="text-2xl font-bold mt-1">Sala de video</h1>
-          <p className="text-sm text-muted mt-1">Prepara una sala privada para competir cara a cara.</p>
+          <p className="text-xs font-mono uppercase text-accent tracking-widest">Competición 1v1</p>
+          <h1 className="text-2xl font-bold mt-1">Sala de competición</h1>
+          <p className="text-sm text-muted mt-1">Crea una sala privada, comparte el código y resuelve rondas contra otro cuber.</p>
         </header>
 
-        <section className="grid lg:grid-cols-[320px_1fr] gap-5 items-start">
-          <div className="card">
-            <div className="mb-5">
-              <p className="form-label mb-2">Crear sala</p>
-              <button
-                className="btn-primary"
-                type="button"
-                onClick={handleCreateRoom}
-                disabled={controlsDisabled}
-                data-testid="create-room-button"
-              >
-                {competitionStatus === 'loading'
-                  ? 'Creando sala...'
-                  : status === 'loading'
-                    ? 'Conectando video...'
-                    : 'Crear sala'}
-              </button>
-            </div>
-
-            <div className="border-t border-border pt-5">
-              <form onSubmit={handleJoinRoom}>
-                <label className="form-label" htmlFor="roomCode">Código de sala</label>
-                <input
-                  id="roomCode"
-                  className="form-input uppercase"
-                  value={joinCode}
-                  onChange={(e) => setJoinCode(e.target.value)}
-                  placeholder="ABC123"
-                  disabled={controlsDisabled}
-                  required
-                />
-
+        {!isCompetitionActive && (
+          <section className="grid lg:grid-cols-[320px_1fr] gap-5 items-start">
+            <div className="card">
+              <div className="mb-5">
+                <p className="form-label mb-2">Crear sala</p>
                 <button
-                  className="btn-secondary"
-                  type="submit"
+                  className="btn-primary"
+                  type="button"
+                  onClick={handleCreateRoom}
                   disabled={controlsDisabled}
-                  data-testid="join-room-button"
+                  data-testid="create-room-button"
                 >
                   {competitionStatus === 'loading'
-                    ? 'Entrando...'
+                    ? 'Creando sala...'
                     : status === 'loading'
                       ? 'Conectando video...'
-                      : 'Unirse con código'}
+                      : 'Crear sala'}
                 </button>
-              </form>
-            </div>
-
-            {visibleError && (
-              <div className="mt-5 px-3 py-2.5 bg-red-400/10 border border-red-400/20 rounded-md text-red-400 text-sm">
-                {visibleError}
               </div>
-            )}
 
-            {hasCompetitionRoom && (
-              <button className="btn-secondary mt-3" type="button" onClick={handleLeave} data-testid="leave-room-button">
+              <div className="border-t border-border pt-5">
+                <form onSubmit={handleJoinRoom}>
+                  <label className="form-label" htmlFor="roomCode">Código de sala</label>
+                  <input
+                    id="roomCode"
+                    className="form-input uppercase"
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value)}
+                    placeholder="ABC123"
+                    disabled={controlsDisabled}
+                    required
+                  />
+
+                  <button
+                    className="btn-secondary"
+                    type="submit"
+                    disabled={controlsDisabled}
+                    data-testid="join-room-button"
+                  >
+                    {competitionStatus === 'loading'
+                      ? 'Entrando...'
+                      : status === 'loading'
+                        ? 'Conectando video...'
+                        : 'Unirse con código'}
+                  </button>
+                </form>
+              </div>
+
+              {visibleError && (
+                <div
+                  className="mt-5 px-3 py-2.5 bg-red-400/10 border border-red-400/20 rounded-md text-red-400 text-sm"
+                  role="alert"
+                >
+                  {visibleError}
+                </div>
+              )}
+
+              {hasCompetitionRoom && (
+                <button className="btn-secondary mt-3" type="button" onClick={handleLeave} data-testid="leave-room-button">
                 Salir de la sala
-              </button>
-            )}
-          </div>
-
-          <div className="border border-border bg-surface rounded-lg overflow-hidden">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-b border-border">
-              <div>
-                <h2 className="text-base font-semibold" data-testid="room-title">
-                  {roomCode ? `Sala ${roomCode}` : 'Esperando sala de competencia'}
-                </h2>
-                <p className="text-xs text-muted">
-                  {isConnectedRtc
-                    ? 'Cámara y micrófono conectados a la sala.'
-                    : isJoiningRtc
-                      ? 'Pidiendo permisos y entrando a la sala.'
-                      : isReady
-                        ? 'Token listo para conectar el cliente RTC.'
-                        : 'Crea una sala o únete con un código.'}
-                </p>
-              </div>
-              <span className={isConnectedRtc ? 'badge-green' : 'badge-cyan'} data-testid="rtc-status">
-                {rtcStatusLabel()}
-              </span>
+                </button>
+              )}
             </div>
 
-            <div className="grid md:grid-cols-2 gap-3 p-4">
-              <div
-                className="aspect-video rounded-md border border-border-light bg-bg overflow-hidden relative"
-                aria-label="Video local"
-              >
-                <div ref={localVideoRef} className="absolute inset-0" data-testid="local-video" />
-                {!isConnectedRtc && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center px-4">
-                      <p className="text-sm font-medium text-[#e2f0ff]">Tu cámara</p>
-                      <p className="text-xs text-muted mt-1">
-                        {isJoiningRtc ? 'Activando cámara y micrófono.' : 'Se activará al entrar en la sala.'}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {isConnectedRtc && (
-                  <span className="absolute left-3 top-3 badge-green">Tú</span>
-                )}
+            <div className="border border-border bg-surface rounded-lg overflow-hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-b border-border">
+                <div>
+                  <h2 className="text-base font-semibold" data-testid="room-title">
+                    {roomCode ? `Sala ${roomCode}` : 'Esperando sala de competencia'}
+                  </h2>
+                  <p className="text-xs text-muted">{roomStatusCopy({ isConnectedRtc, isJoiningRtc, isReady })}</p>
+                </div>
+                <span className={isConnectedRtc ? 'badge-green' : 'badge-cyan'} data-testid="rtc-status">
+                  {rtcStatusLabel()}
+                </span>
               </div>
-              <div
-                className="aspect-video rounded-md border border-border-light bg-bg overflow-hidden relative"
-                aria-label="Video rival"
+
+              <div className="grid md:grid-cols-2 gap-3 p-4">
+                <section
+                  className="aspect-video rounded-md border border-border-light bg-bg overflow-hidden relative"
+                  aria-labelledby="local-video-title"
+                  role="group"
+                >
+                  <h3 id="local-video-title" className="sr-only">Tu cámara</h3>
+                  <div ref={localVideoRef} className="absolute inset-0" data-testid="local-video" />
+                  {!isConnectedRtc && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center px-4">
+                        <p className="text-sm font-medium text-[#e2f0ff]">Tu cámara</p>
+                        <p className="text-xs text-muted mt-1">
+                          {isJoiningRtc ? 'Activando cámara y micrófono.' : 'Se activará al entrar en la sala.'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {isConnectedRtc && (
+                    <span className="absolute left-3 top-3 badge-green">Tú</span>
+                  )}
+                </section>
+                <section
+                  className="aspect-video rounded-md border border-border-light bg-bg overflow-hidden relative"
+                  aria-labelledby="remote-video-title"
+                  role="group"
+                >
+                  <h3 id="remote-video-title" className="sr-only">Rival</h3>
+                  {remoteUsers[0] ? (
+                    <>
+                      <div
+                        ref={(element) => bindRemoteVideo(remoteUsers[0].uid, element)}
+                        className="absolute inset-0"
+                        data-testid="remote-video"
+                      />
+                      <span className="absolute left-3 top-3 badge-green">Rival #{remoteUsers[0].uid}</span>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center px-4">
+                        <p className="text-sm font-medium text-[#e2f0ff]">Rival</p>
+                        <p className="text-xs text-muted mt-1">
+                          {isConnectedRtc ? 'Esperando a que el otro cuber se una.' : 'Aún no hay sala activa.'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </section>
+              </div>
+
+              {isReady && (
+                <dl className="grid sm:grid-cols-[1.25fr_1fr_0.7fr] gap-3 px-4 pb-4 text-sm">
+                  <div className="border border-accent/25 bg-accent/5 rounded-md p-3">
+                    <dt className="text-xs text-muted">Código de sala</dt>
+                    <dd className="mt-1 font-mono text-xl text-[#e2f0ff] break-all" data-testid="room-code">{roomCode || 'Sin código'}</dd>
+                  </div>
+                  <div className="border border-border rounded-md p-3">
+                    <dt className="text-xs text-muted">Canal</dt>
+                    <dd className="mt-1 font-mono text-xs break-all" data-testid="room-channel">{room.channelName}</dd>
+                  </div>
+                  <div className="border border-border rounded-md p-3">
+                    <dt className="text-xs text-muted">UID</dt>
+                    <dd className="mt-1 font-mono text-xs" data-testid="room-uid">{room.uid ?? 'auto'}</dd>
+                  </div>
+                </dl>
+              )}
+            </div>
+          </section>
+        )}
+
+        {hasCompetitionRoom && isCompetitionActive && (
+          <section className="grid xl:grid-cols-[minmax(0,1fr)_380px] gap-4 items-start" aria-label="Sala de competición activa">
+            <div className="xl:col-span-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border border-border bg-surface rounded-lg px-4 py-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_16px_rgba(52,211,153,0.6)]" aria-hidden="true" />
+                <div className="min-w-0">
+                  <h2 className="text-base font-semibold" data-testid="room-title">
+                    Sala 1v1{activeRoundNumber ? ` · Ronda ${activeRoundNumber}` : ''}
+                  </h2>
+                  <p className="text-xs text-muted">{remoteUsers.length ? 'Rival conectado · competición activa' : 'Esperando stream del rival'}</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                <details className="relative">
+                  <summary className="list-none cursor-pointer rounded-md border border-border bg-bg px-3 py-2 text-sm text-muted hover:border-border-light hover:text-[#e2f0ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+                    Detalles de sala
+                  </summary>
+                  <dl className="absolute right-0 z-20 mt-2 grid min-w-72 gap-3 rounded-md border border-border bg-bg p-3 text-sm shadow-xl">
+                    <div>
+                      <dt className="text-xs text-muted">Código</dt>
+                      <dd className="mt-1 font-mono text-xs break-all" data-testid="room-code">{roomCode || 'Sin código'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted">Canal</dt>
+                      <dd className="mt-1 font-mono text-xs break-all" data-testid="room-channel">{room?.channelName ?? 'Sin canal'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted">UID</dt>
+                      <dd className="mt-1 font-mono text-xs" data-testid="room-uid">{room?.uid ?? 'auto'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-muted">Estado</dt>
+                      <dd className="mt-1">
+                        <span className={isConnectedRtc ? 'badge-green' : 'badge-cyan'} data-testid="rtc-status">
+                          {rtcStatusLabel()}
+                        </span>
+                      </dd>
+                    </div>
+                  </dl>
+                </details>
+                <button
+                  className="btn-secondary w-auto px-4 py-2"
+                  type="button"
+                  onClick={handleLeave}
+                  aria-label="Salir de la sala"
+                  data-testid="leave-room-button"
+                >
+                  Salir
+                </button>
+              </div>
+            </div>
+
+            <div className="relative min-h-[440px] lg:min-h-[620px] overflow-hidden rounded-lg border border-border bg-bg">
+              <section
+                className="absolute inset-0"
+                aria-labelledby="remote-video-title"
+                role="group"
               >
+                <h3 id="remote-video-title" className="sr-only">Rival</h3>
                 {remoteUsers[0] ? (
                   <>
                     <div
@@ -246,65 +365,82 @@ export function VideoRoomPage() {
                       className="absolute inset-0"
                       data-testid="remote-video"
                     />
-                    <span className="absolute left-3 top-3 badge-green">Rival #{remoteUsers[0].uid}</span>
+                    <span className="absolute left-4 top-4 badge-green">Rival #{remoteUsers[0].uid}</span>
                   </>
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center px-4">
-                      <p className="text-sm font-medium text-[#e2f0ff]">Rival</p>
-                      <p className="text-xs text-muted mt-1">
-                        {isConnectedRtc ? 'Esperando a que el otro cuber se una.' : 'Aún no hay sala activa.'}
-                      </p>
+                  <div className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_50%_35%,rgba(34,211,238,0.14),transparent_28%),linear-gradient(145deg,#08131f,#03070d_62%)]">
+                    <div className="grid h-56 w-56 place-items-center rounded-full border border-accent/25 bg-surface text-sm text-muted">
+                      Video rival
                     </div>
+                    <span className="absolute left-4 top-4 badge-cyan">Rival</span>
                   </div>
                 )}
-              </div>
+              </section>
+
+              <section
+                className="absolute bottom-4 right-4 aspect-video w-44 overflow-hidden rounded-lg border border-border-light bg-surface shadow-2xl sm:w-56"
+                aria-labelledby="local-video-title"
+                role="group"
+              >
+                <h3 id="local-video-title" className="sr-only">Tu cámara</h3>
+                <div ref={localVideoRef} className="absolute inset-0" data-testid="local-video" />
+                {!isConnectedRtc && (
+                  <div className="absolute inset-0 grid place-items-center bg-bg">
+                    <p className="text-xs text-muted">Tu cámara</p>
+                  </div>
+                )}
+                <span className="absolute left-2 top-2 rounded-full bg-bg/80 px-2 py-1 text-xs font-semibold text-[#e2f0ff]">
+                  Tu cámara
+                </span>
+              </section>
             </div>
 
-            {isReady && (
-              <dl className="grid sm:grid-cols-3 gap-3 px-4 pb-4 text-sm">
-                <div className="border border-border rounded-md p-3">
-                  <dt className="text-xs text-muted">Código</dt>
-                  <dd className="mt-1 font-mono text-xs break-all" data-testid="room-code">{roomCode || 'Sin código'}</dd>
-                </div>
-                <div className="border border-border rounded-md p-3">
-                  <dt className="text-xs text-muted">Canal</dt>
-                  <dd className="mt-1 font-mono text-xs break-all" data-testid="room-channel">{room.channelName}</dd>
-                </div>
-                <div className="border border-border rounded-md p-3">
-                  <dt className="text-xs text-muted">UID</dt>
-                  <dd className="mt-1 font-mono text-xs" data-testid="room-uid">{room.uid ?? 'auto'}</dd>
-                </div>
-              </dl>
-            )}
-          </div>
-        </section>
-
-        {hasCompetitionRoom && !isCompetitionActive && (
-          <section className="border border-border bg-surface rounded-lg p-4">
-            <p className="form-label mb-1">Timer local</p>
-            <h2 className="text-base font-semibold">Esperando rival</h2>
-            <p className="text-sm text-muted mt-1">
-              El cronómetro se activa cuando otro cuber entra con el código de sala.
-            </p>
-            <button className="btn-secondary mt-4" type="button" onClick={handleRefreshRoom} data-testid="refresh-room-button">
-              Actualizar sala
-            </button>
+            <aside className="grid gap-4">
+              <CompetitionTimerPanel
+                roomCode={roomCode}
+                activeRound={competitionRoom.activeRound}
+                latestCompletedRound={competitionRoom.latestCompletedRound}
+                onSubmit={handleSubmitResult}
+                submitStatus={competitionResultStatus}
+                submitError={competitionResultError}
+                submittedResult={competitionResult}
+                isWaitingForOpponent={isWaitingForNextRound}
+              />
+            </aside>
           </section>
         )}
 
-        {hasCompetitionRoom && isCompetitionActive && (
-          <CompetitionTimerPanel
-            roomCode={roomCode}
-            activeRound={competitionRoom.activeRound}
-            latestCompletedRound={competitionRoom.latestCompletedRound}
-            onSubmit={handleSubmitResult}
-            submitStatus={competitionResultStatus}
-            submitError={competitionResultError}
-            submittedResult={competitionResult}
-            isWaitingForOpponent={isWaitingForNextRound}
-          />
+        {hasCompetitionRoom && !isCompetitionActive && (
+          <section
+            className="border border-border bg-surface rounded-lg p-4"
+            aria-labelledby="waiting-room-title"
+            role="status"
+            aria-live="polite"
+          >
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div>
+                <p className="form-label mb-1">Sala preparada</p>
+                <h2 id="waiting-room-title" className="text-base font-semibold">Esperando rival</h2>
+                <p className="text-sm text-muted mt-1">
+                  Comparte el código para activar el cronómetro cuando el otro cuber entre.
+                </p>
+              </div>
+              <div className="rounded-md border border-accent/25 bg-accent/5 px-4 py-3">
+                <p className="text-xs text-muted">Código</p>
+                <p className="font-mono text-2xl text-[#e2f0ff] tracking-wide">{roomCode}</p>
+              </div>
+            </div>
+            <div className="mt-4 grid sm:grid-cols-2 gap-3">
+              <button className="btn-primary" type="button" onClick={handleCopyRoomCode} disabled={!roomCode}>
+                {copyStatus === 'copied' ? 'Código copiado' : 'Copiar código'}
+              </button>
+              <button className="btn-secondary" type="button" onClick={handleRefreshRoom} data-testid="refresh-room-button">
+                Actualizar sala
+              </button>
+            </div>
+          </section>
         )}
+
       </div>
     </main>
   );

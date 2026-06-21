@@ -34,6 +34,13 @@ function roundResolution(result) {
   return result?.roundResolution ?? result?.round_resolution ?? null;
 }
 
+function isInteractiveTarget(target) {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+
+  return ['A', 'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName);
+}
+
 export function CompetitionTimerPanel({
   roomCode,
   activeRound = null,
@@ -103,9 +110,10 @@ export function CompetitionTimerPanel({
 
   useEffect(() => {
     function handleKeyDown(event) {
-      const isTimerKey = [' ', 'Spacebar', 'Tab'].includes(event.key) || ['Space', 'Tab'].includes(event.code);
+      const isTimerKey = [' ', 'Spacebar'].includes(event.key) || event.code === 'Space';
       if (!isTimerKey) return;
       if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      if (isInteractiveTarget(event.target)) return;
       event.preventDefault();
       handleToggleTimer();
     }
@@ -128,6 +136,7 @@ export function CompetitionTimerPanel({
   const submittedPenalty = submittedResult ? resultPenalty(submittedResult) : 'none';
   const resolution = roundResolution(submittedResult) ?? (!isWaitingForOpponent ? latestCompletedRound?.resolution : null);
   const activeRoundNumber = activeRound?.number ?? null;
+  const activeScramble = activeRound?.scramble ?? null;
 
   return (
     <section
@@ -150,8 +159,14 @@ export function CompetitionTimerPanel({
         </span>
       </div>
 
+      {activeScramble && (
+        <div className="mt-4 rounded-md border border-accent/25 bg-accent/5 px-4 py-5 text-center">
+          <p className="font-mono text-xl leading-relaxed text-[#e2f0ff] break-words">{activeScramble}</p>
+        </div>
+      )}
+
       <div className="mt-5 rounded-md border border-border-light bg-bg px-4 py-5 text-center">
-        <div className="font-mono text-5xl sm:text-6xl leading-none" aria-live="polite" data-testid="timer-display">
+        <div className="font-mono text-5xl sm:text-6xl leading-none" aria-live="off" data-testid="timer-display">
           {isDnf ? 'DNF' : formatSolveTime(elapsedMs)}
         </div>
         <p className="text-xs text-muted mt-3">Barra espaciadora para iniciar o parar</p>
@@ -165,13 +180,15 @@ export function CompetitionTimerPanel({
           disabled={isSubmitting || isWaitingForOpponent}
           data-testid="timer-toggle-button"
         >
-          {isRunning ? 'Parar' : 'Iniciar'}
+          {isRunning ? 'Parar' : isWaitingForOpponent ? 'Esperando rival' : 'Iniciar'}
         </button>
       </div>
 
       {isWaitingForOpponent && (
         <div
           className="mt-4 rounded-md border border-cyan-400/20 bg-cyan-400/10 px-3 py-2.5 text-sm text-cyan-300"
+          role="status"
+          aria-live="polite"
           data-testid="waiting-opponent-message"
         >
           Resultado enviado. Esperando a que el rival cierre esta ronda.
@@ -191,24 +208,27 @@ export function CompetitionTimerPanel({
             type="button"
             onClick={() => handleSubmit('none')}
             disabled={isSubmitting}
+            aria-label="Enviar resultado sin penalización"
             data-testid="submit-ok-button"
           >
             {isSubmitting ? 'Enviando...' : 'OK'}
           </button>
           <button
-            className="btn-secondary"
+            className="btn-warning"
             type="button"
             onClick={() => handleSubmit('+2')}
             disabled={isSubmitting}
+            aria-label="Enviar resultado con penalización de 2 segundos"
             data-testid="submit-plus-two-button"
           >
             +2
           </button>
           <button
-            className="btn-secondary"
+            className="btn-danger"
             type="button"
             onClick={() => handleSubmit('dnf')}
             disabled={isSubmitting}
+            aria-label="Enviar resultado DNF"
             data-testid="submit-dnf-button"
           >
             DNF
@@ -219,16 +239,26 @@ export function CompetitionTimerPanel({
       {submittedResult && (
         <div
           className="mt-4 rounded-md border border-emerald-400/20 bg-emerald-400/10 px-3 py-2.5 text-sm text-emerald-400"
+          role="status"
+          aria-live="polite"
           data-testid="result-success"
         >
-          Resultado enviado: {formatSolveTime(submittedTime)}
-          {submittedPenalty === '+2' ? ' (+2)' : ''}
-          {submittedPenalty === 'dnf' ? ' (DNF)' : ''}
+          <p className="font-semibold">Último resultado enviado</p>
+          <p className="mt-1">
+            {formatSolveTime(submittedTime)}
+            {submittedPenalty === '+2' ? ' (+2)' : ''}
+            {submittedPenalty === 'dnf' ? ' (DNF)' : ''}
+          </p>
         </div>
       )}
 
       {resolution?.status === 'completed' && (
-        <div className="mt-4 rounded-md border border-border bg-bg px-3 py-2.5 text-sm" data-testid="round-resolution">
+        <div
+          className="mt-4 rounded-md border border-border bg-bg px-3 py-2.5 text-sm"
+          role="status"
+          aria-live="polite"
+          data-testid="round-resolution"
+        >
           <p className="font-semibold text-foreground">Ronda resuelta</p>
           <p className="text-muted mt-1">
             Gana {resolution.winner?.username ?? 'competidor'} con {formatSolveTime(resultFinalTime(resolution.winnerResult))}.
@@ -242,7 +272,12 @@ export function CompetitionTimerPanel({
       )}
 
       {resolution?.status === 'draw' && (
-        <div className="mt-4 rounded-md border border-border bg-bg px-3 py-2.5 text-sm" data-testid="round-resolution">
+        <div
+          className="mt-4 rounded-md border border-border bg-bg px-3 py-2.5 text-sm"
+          role="status"
+          aria-live="polite"
+          data-testid="round-resolution"
+        >
           <p className="font-semibold text-foreground">Ronda empatada</p>
           <p className="text-muted mt-1">No se actualiza el Elo en esta ronda.</p>
         </div>
@@ -251,6 +286,7 @@ export function CompetitionTimerPanel({
       {submitError && (
         <div
           className="mt-4 rounded-md border border-red-400/20 bg-red-400/10 px-3 py-2.5 text-sm text-red-400"
+          role="alert"
           data-testid="result-error"
         >
           {submitError}

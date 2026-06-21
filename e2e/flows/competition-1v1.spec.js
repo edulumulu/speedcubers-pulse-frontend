@@ -68,7 +68,8 @@ test.describe('competition 1v1', () => {
       expect(joinPayload.competition.host.username).toBe(hostUser.username);
       expect(joinPayload.competition.guest.username).toBe(guestUser.username);
 
-      await expect(guest.page.getByTestId('room-title')).toHaveText(`Sala ${code}`);
+      await expect(guest.page.getByTestId('room-title')).toContainText('Sala 1v1');
+      await expect(guest.page.getByTestId('room-code')).toHaveText(code);
       await expect(guest.page.getByTestId('competition-timer')).toBeVisible();
       await expect(guest.page.getByTestId('rtc-status')).toHaveText('En directo');
 
@@ -91,7 +92,7 @@ test.describe('competition 1v1', () => {
       expect(guestResult.nextRound.number).toBe(2);
 
       await expect(guest.page.getByTestId('round-resolution')).toBeVisible();
-      await expect(host.page.getByText(/ronda 2/i)).toBeVisible({ timeout: 8_000 });
+      await expect(host.page.getByTestId('room-title')).toContainText('Ronda 2', { timeout: 8_000 });
       await expect(host.page.getByTestId('round-resolution')).toBeVisible();
     } finally {
       await Promise.all([
