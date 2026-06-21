@@ -43,8 +43,10 @@ export function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit}>
-            <label className="form-label">Email</label>
+            <label className="form-label" htmlFor="login-email">Email</label>
             <input
+              id="login-email"
+              name="email"
               className="form-input"
               type="email"
               placeholder="tu@email.com"
@@ -54,8 +56,10 @@ export function LoginPage() {
               autoComplete="email"
             />
 
-            <label className="form-label">Contraseña</label>
+            <label className="form-label" htmlFor="login-password">Contraseña</label>
             <input
+              id="login-password"
+              name="password"
               className="form-input"
               type="password"
               placeholder="••••••••"

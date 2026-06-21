@@ -104,8 +104,10 @@ export function RegisterPage() {
           <form onSubmit={handleSubmit}>
             {step === 0 && (
               <>
-                <label className="form-label">Nombre de usuario</label>
+                <label className="form-label" htmlFor="register-username">Nombre de usuario</label>
                 <input
+                  id="register-username"
+                  name="username"
                   className={`form-input ${errors.username ? 'border-red-500' : ''}`}
                   type="text"
                   placeholder="edulumulu"
@@ -116,8 +118,10 @@ export function RegisterPage() {
                   maxLength={20}
                 />
                 {errors.username && <p className="text-xs text-red-400 -mt-3 mb-3">{errors.username}</p>}
-                <label className="form-label">Email</label>
+                <label className="form-label" htmlFor="register-email">Email</label>
                 <input
+                  id="register-email"
+                  name="email"
                   className={`form-input ${errors.email ? 'border-red-500' : ''}`}
                   type="email"
                   placeholder="tu@email.com"
@@ -126,8 +130,10 @@ export function RegisterPage() {
                   required
                 />
                 {errors.email && <p className="text-xs text-red-400 -mt-3 mb-3">{errors.email}</p>}
-                <label className="form-label">Contraseña</label>
+                <label className="form-label" htmlFor="register-password">Contraseña</label>
                 <input
+                  id="register-password"
+                  name="password"
                   className={`form-input ${errors.password ? 'border-red-500' : ''}`}
                   type="password"
                   placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número"
@@ -151,8 +157,10 @@ export function RegisterPage() {
                   <div className="flex-1 border-t border-border" />
                 </div>
 
-                <label className="form-label">WCA ID</label>
+                <label className="form-label" htmlFor="register-wca-id">WCA ID</label>
                 <input
+                  id="register-wca-id"
+                  name="wca_id"
                   className={`form-input ${errors.wca_id ? 'border-red-500' : ''}`}
                   type="text"
                   placeholder="2022LUCA04"
