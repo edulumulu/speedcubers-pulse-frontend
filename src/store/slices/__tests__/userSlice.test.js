@@ -1,8 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit';
 import userReducer, {
+  fetchProfile,
   updateMe,
   deleteMe,
   fetchMe,
+  selectProfile,
   selectMe,
   selectUserLoading,
   selectUserError,
@@ -14,6 +16,38 @@ const makeStore = (preloaded = {}) =>
 const defaultState = { profile: null, me: null, loading: false, error: null };
 
 describe('userSlice reducers', () => {
+  describe('fetchProfile', () => {
+    it('pending clears previous profile and starts loading', () => {
+      const store = makeStore({ ...defaultState, profile: { username: 'old' }, error: 'old' });
+      store.dispatch({ type: fetchProfile.pending.type });
+      const state = store.getState().user;
+      expect(state.loading).toBe(true);
+      expect(state.profile).toBeNull();
+      expect(state.error).toBeNull();
+    });
+
+    it('fulfilled maps public profile payload for ProfileCard', () => {
+      const store = makeStore({ ...defaultState, loading: true });
+      store.dispatch({
+        type: fetchProfile.fulfilled.type,
+        payload: {
+          user: { id: '1', username: 'alice', createdAt: '2026-06-01T00:00:00.000Z' },
+          wcaProfile: { wcaId: '2022ALIC01', countryIso2: 'ES' },
+          wcaLiveData: { name: 'Alice Cuber', countryIso2: 'ES' },
+        },
+      });
+      const state = store.getState().user;
+      expect(state.loading).toBe(false);
+      expect(state.profile).toEqual({
+        id: '1',
+        username: 'alice',
+        createdAt: '2026-06-01T00:00:00.000Z',
+        wcaId: '2022ALIC01',
+        wca: { name: 'Alice Cuber', countryIso2: 'ES' },
+      });
+    });
+  });
+
   describe('fetchMe', () => {
     it('pending sets loading true and clears error', () => {
       const store = makeStore({ ...defaultState, error: 'old' });
@@ -101,6 +135,11 @@ describe('userSlice selectors', () => {
   it('selectMe returns me', () => {
     const me = { username: 'alice' };
     expect(selectMe({ user: { ...defaultState, me } })).toEqual(me);
+  });
+
+  it('selectProfile returns public profile', () => {
+    const profile = { username: 'alice' };
+    expect(selectProfile({ user: { ...defaultState, profile } })).toEqual(profile);
   });
 
   it('selectUserLoading returns loading', () => {

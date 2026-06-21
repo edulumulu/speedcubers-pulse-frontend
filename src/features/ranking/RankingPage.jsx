@@ -35,6 +35,7 @@ export function RankingPage() {
               <button
                 key={e}
                 onClick={() => handleEventChange(e)}
+                aria-pressed={event === e}
                 className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                   event === e
                     ? 'bg-primary text-primary-foreground'
