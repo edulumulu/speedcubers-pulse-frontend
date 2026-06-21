@@ -7,8 +7,28 @@ function loadAgora() {
   return agoraModulePromise;
 }
 
+function shouldUseFakeRtc() {
+  return import.meta.env.VITE_E2E_FAKE_RTC === 'true'
+    || globalThis.window?.__SPEEDCUBERS_FAKE_RTC__ === true;
+}
+
+function createFakeRtcSession({ uid }) {
+  return {
+    uid,
+    localTracks: [],
+    playLocalVideo(element) {
+      element?.setAttribute('data-rtc-rendered', 'local');
+    },
+    async leave() {},
+  };
+}
+
 export const agoraRtcService = {
   async createSession({ appId, channelName, token, uid, onRemoteUserJoined, onRemoteUserLeft }) {
+    if (shouldUseFakeRtc()) {
+      return createFakeRtcSession({ uid });
+    }
+
     const AgoraRTC = await loadAgora();
     const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
     const localTracks = await AgoraRTC.createMicrophoneAndCameraTracks();

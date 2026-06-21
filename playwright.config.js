@@ -7,6 +7,7 @@ const socketUrl = process.env.E2E_SOCKET_URL ?? 'http://localhost:3000';
 export default defineConfig({
   testDir: './e2e',
   timeout: 30_000,
+  workers: 1,
   expect: {
     timeout: 5_000,
   },
