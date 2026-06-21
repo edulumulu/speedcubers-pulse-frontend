@@ -1,13 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { uniqueE2eUser } from '../fixtures/users.js';
+import { expectBackendHealthy } from '../support/backend.js';
 import { expectAuthenticated, expectGuest, expectNoTokenPersistence } from '../support/session.js';
-
-const backendHealthUrl = process.env.E2E_BACKEND_HEALTH_URL ?? 'http://localhost:3000/health';
 
 test.describe('auth/session', () => {
   test.beforeAll(async ({ request }) => {
-    const response = await request.get(backendHealthUrl);
-    expect(response.ok(), `Backend must be running at ${backendHealthUrl}`).toBe(true);
+    await expectBackendHealthy(request);
   });
 
   test('keeps a registered user authenticated across reloads and logout', async ({ page }) => {

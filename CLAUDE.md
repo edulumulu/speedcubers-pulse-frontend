@@ -2,7 +2,7 @@
 
 Red social para speedcubers españoles: competencias 1v1 en tiempo real con videoconferencia, rankings y presencia online. Proyecto de Fin de Master — MVP en 8 semanas.
 
-**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B, 6 y 7A completadas. Fase 7B-1 en curso: base E2E con Playwright para auth/session.
+**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B, 6, 7A y 7B-1 completadas. Fase 7B-2 en curso: E2E público de ranking y perfil.
 
 ## Arquitectura
 
@@ -84,7 +84,7 @@ playwright.config.js              # Config Playwright: frontend dev server + bac
 - Tests unitarios con Vitest + React Testing Library
 - No mockear Redux store completo — usar `renderWithProviders` con un store real configurado para tests
 - `msw` para interceptar llamadas HTTP en tests (no mockear axios directamente)
-- **Tests E2E con Playwright** — Fase 7B-1 cubre auth/session con navegador real: registro, reload con refresh cookie `httpOnly`, logout, rutas protegidas y login posterior. Ver plan completo en `../speedcubers-pulse-docs/PLAYWRIGHT_E2E_PLAN.md`
+- **Tests E2E con Playwright** — Fase 7B-1 cubre auth/session; Fase 7B-2 cubre ranking público, filtro de evento y navegación a perfil público. Ver plan completo en `../speedcubers-pulse-docs/PLAYWRIGHT_E2E_PLAN.md`
 
 Targets:
 - >80% cobertura global (Vitest)
@@ -138,6 +138,7 @@ npm run lint:fix     # Auto-fix
 - **Competition timer** (`src/features/timer/CompetitionTimerPanel.jsx`): timer local con `performance.now()`. La barra espaciadora inicia/para; al parar aparecen `OK`, `+2` y `DNF`, y cualquiera de esas acciones envía el resultado al backend. Tras enviar, bloquea el timer hasta que la ronda se resuelve o se detecta la siguiente ronda activa.
 - **Presence connection** (`src/features/presence/PresenceConnection.jsx`): conecta Socket.io cuando existe `accessToken`, envía heartbeat cada 30s, recibe eventos `presence:online`/`presence:offline` y actualiza `presenceSlice`.
 - **Playwright auth/session E2E** (`e2e/flows/auth-session.spec.js`): registra un usuario único, valida sesión tras recarga por `POST /auth/refresh`, confirma que no hay tokens en `localStorage`/`sessionStorage`, prueba logout, redirección protegida y login posterior.
+- **Playwright ranking/profile E2E** (`e2e/flows/ranking-profile.spec.js`): valida ranking público, filtro de evento `2x2`, enlace a perfil público y ausencia de email privado.
 
 ## Antes de hacer push
 
@@ -173,7 +174,8 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 | 5B | Resumen de ronda, espera del rival y avance a la siguiente ronda | ✅ |
 | 6 | Presencia online en navbar con Socket.io + Redux | ✅ |
 | 7A | Estabilidad de sesión: recuperación al recargar sin `localStorage` | ✅ |
-| 7B-1 | Playwright auth/session E2E foundation | ⏳ |
+| 7B-1 | Playwright auth/session E2E foundation | ✅ |
+| 7B-2 | Playwright ranking/profile E2E | ⏳ |
 | 7 | Integración, e2e, polish | — |
 | 8 | Deployment (Railway/Vercel) | — |
 

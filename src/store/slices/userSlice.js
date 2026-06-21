@@ -46,6 +46,21 @@ export const deleteMe = createAsyncThunk('user/deleteMe', async (_, { getState, 
   }
 });
 
+function mapPublicProfile(payload) {
+  return {
+    ...payload.user,
+    wcaId: payload.wcaProfile?.wcaId ?? null,
+    wca: payload.wcaLiveData
+      ? {
+        ...payload.wcaLiveData,
+        countryIso2: payload.wcaLiveData.countryIso2 ?? payload.wcaProfile?.countryIso2 ?? null,
+      }
+      : payload.wcaProfile
+        ? { countryIso2: payload.wcaProfile.countryIso2 ?? null }
+        : null,
+  };
+}
+
 const userSlice = createSlice({
   name: 'user',
   initialState: {
@@ -61,10 +76,14 @@ const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchProfile.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(fetchProfile.pending, (state) => {
+        state.loading = true;
+        state.profile = null;
+        state.error = null;
+      })
       .addCase(fetchProfile.fulfilled, (state, action) => {
         state.loading = false;
-        state.profile = action.payload;
+        state.profile = mapPublicProfile(action.payload);
       })
       .addCase(fetchProfile.rejected, (state, action) => {
         state.loading = false;
