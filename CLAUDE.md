@@ -2,7 +2,7 @@
 
 Red social para speedcubers españoles: competencias 1v1 en tiempo real con videoconferencia, rankings y presencia online. Proyecto de Fin de Master — MVP en 8 semanas.
 
-**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B y 6 completadas. Fase 7A en curso: estabilidad de sesión al recargar mediante refresh cookie `httpOnly` y bootstrap de auth.
+**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B, 6 y 7A completadas. Fase 7B-1 en curso: base E2E con Playwright para auth/session.
 
 ## Arquitectura
 
@@ -40,6 +40,7 @@ src/
 - Socket.io client 4
 - Agora Web SDK video room (camera/mic, local preview, remote stream rendering)
 - Vitest + React Testing Library (tests)
+- Playwright (E2E auth/session en Fase 7B-1)
 - ESLint + Prettier
 
 ## Convenciones de commits
@@ -77,13 +78,13 @@ src/
 e2e/                              # Tests E2E con Playwright (Fase 7)
   fixtures/                       # Helpers: createUser(), loginAs(), etc.
   flows/                          # Specs por flujo de usuario
-  playwright.config.ts
+playwright.config.js              # Config Playwright: frontend dev server + backend real
 ```
 
 - Tests unitarios con Vitest + React Testing Library
 - No mockear Redux store completo — usar `renderWithProviders` con un store real configurado para tests
 - `msw` para interceptar llamadas HTTP en tests (no mockear axios directamente)
-- **Tests E2E con Playwright** — se añaden en Fase 7, cuando las features principales estén estabilizadas. Ver plan completo en `../speedcubers-pulse-docs/PLAYWRIGHT_E2E_PLAN.md`
+- **Tests E2E con Playwright** — Fase 7B-1 cubre auth/session con navegador real: registro, reload con refresh cookie `httpOnly`, logout, rutas protegidas y login posterior. Ver plan completo en `../speedcubers-pulse-docs/PLAYWRIGHT_E2E_PLAN.md`
 
 Targets:
 - >80% cobertura global (Vitest)
@@ -118,6 +119,9 @@ npm run preview      # Preview del build
 npm test             # Vitest una sola pasada
 npm run test:watch   # Vitest en modo watch
 npm run test:coverage
+npm run test:e2e     # Playwright (requiere backend en http://localhost:3000)
+npm run test:e2e:ui  # Playwright UI
+npm run test:e2e:debug
 npm run lint         # ESLint + Prettier check
 npm run lint:fix     # Auto-fix
 ```
@@ -133,6 +137,7 @@ npm run lint:fix     # Auto-fix
 - **Video room** (`src/features/video/VideoRoomPage.jsx`): ruta protegida `/compete`, crea o une sala mediante `competitionService`, solicita token RTC a `POST /video/token` con el `channelName` de backend, entra al canal con Agora Web SDK, publica cámara/micrófono, renderiza preview local y stream remoto, muestra timer cuando la sala está activa, permite enviar resultado por ronda, refresca la sala mientras espera al rival y limpia tracks al salir.
 - **Competition timer** (`src/features/timer/CompetitionTimerPanel.jsx`): timer local con `performance.now()`. La barra espaciadora inicia/para; al parar aparecen `OK`, `+2` y `DNF`, y cualquiera de esas acciones envía el resultado al backend. Tras enviar, bloquea el timer hasta que la ronda se resuelve o se detecta la siguiente ronda activa.
 - **Presence connection** (`src/features/presence/PresenceConnection.jsx`): conecta Socket.io cuando existe `accessToken`, envía heartbeat cada 30s, recibe eventos `presence:online`/`presence:offline` y actualiza `presenceSlice`.
+- **Playwright auth/session E2E** (`e2e/flows/auth-session.spec.js`): registra un usuario único, valida sesión tras recarga por `POST /auth/refresh`, confirma que no hay tokens en `localStorage`/`sessionStorage`, prueba logout, redirección protegida y login posterior.
 
 ## Antes de hacer push
 
@@ -167,7 +172,8 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 | 5A | Timer local + submit básico de resultado por ronda | ✅ |
 | 5B | Resumen de ronda, espera del rival y avance a la siguiente ronda | ✅ |
 | 6 | Presencia online en navbar con Socket.io + Redux | ✅ |
-| 7A | Estabilidad de sesión: recuperación al recargar sin `localStorage` | ⏳ |
+| 7A | Estabilidad de sesión: recuperación al recargar sin `localStorage` | ✅ |
+| 7B-1 | Playwright auth/session E2E foundation | ⏳ |
 | 7 | Integración, e2e, polish | — |
 | 8 | Deployment (Railway/Vercel) | — |
 
