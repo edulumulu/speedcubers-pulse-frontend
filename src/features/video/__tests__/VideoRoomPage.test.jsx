@@ -43,6 +43,11 @@ const competitionRoom = {
   status: 'active',
   host: { id: '1', username: 'edulumulu' },
   guest: { id: '2', username: 'rival' },
+  matchScore: {
+    host: { id: '1', username: 'edulumulu', score: 2 },
+    guest: { id: '2', username: 'rival', score: 1 },
+    roundsPlayed: 3,
+  },
 };
 
 const waitingCompetitionRoom = {
@@ -269,6 +274,20 @@ describe('VideoRoomPage', () => {
     expect(screen.getByText('Rival #7')).toBeInTheDocument();
     expect(screen.getByTestId('remote-video')).toBeInTheDocument();
     expect(bindRemoteVideo).toHaveBeenCalledWith(7, expect.any(HTMLDivElement));
+  });
+
+  it('shows the persistent match score in the active room header', () => {
+    renderVideoRoom({
+      preloadedCompetition: readyCompetitionState,
+      preloadedVideo: { room: readyRoom, status: 'ready', error: null },
+    });
+
+    const score = screen.getByTestId('persistent-match-score');
+    expect(score).toHaveAccessibleName('Marcador de la sala: tú 2, rival 1');
+    expect(score).toHaveTextContent('2');
+    expect(score).toHaveTextContent('1');
+    expect(score).toHaveTextContent('Tú');
+    expect(score).toHaveTextContent('rival');
   });
 
   it('shows competition errors when create or join fails', async () => {

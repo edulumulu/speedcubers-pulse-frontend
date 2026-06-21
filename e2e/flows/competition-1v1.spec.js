@@ -6,6 +6,8 @@ import { enableFakeRtc } from '../support/video.js';
 
 async function submitOkResult(page, code) {
   await page.getByTestId('timer-toggle-button').click();
+  await expect(page.getByTestId('timer-status')).toHaveText('Inspección');
+  await page.getByTestId('timer-toggle-button').click();
   await expect(page.getByTestId('timer-status')).toHaveText('Cronometrando');
   await page.waitForTimeout(100);
   await page.getByTestId('timer-toggle-button').click();
