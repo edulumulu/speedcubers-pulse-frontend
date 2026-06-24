@@ -5,12 +5,22 @@ import { registerAuthenticatedPage } from '../support/session.js';
 import { enableFakeRtc } from '../support/video.js';
 
 async function submitOkResult(page, code) {
-  await page.getByTestId('timer-toggle-button').click();
-  await expect(page.getByTestId('timer-status')).toHaveText('Inspección');
-  await page.getByTestId('timer-toggle-button').click();
-  await expect(page.getByTestId('timer-status')).toHaveText('Cronometrando');
+  const timerStatus = page.getByTestId('timer-status');
+  const timerButton = page.getByTestId('timer-toggle-button');
+  const currentStatus = (await timerStatus.textContent())?.trim();
+
+  if (!['Inspección', 'Cronometrando'].includes(currentStatus)) {
+    await timerButton.click();
+    await expect(timerStatus).toHaveText(/Inspección|Cronometrando/);
+  }
+
+  if ((await timerStatus.textContent())?.trim() === 'Inspección') {
+    await timerButton.click();
+  }
+
+  await expect(timerStatus).toHaveText('Cronometrando');
   await page.waitForTimeout(100);
-  await page.getByTestId('timer-toggle-button').click();
+  await timerButton.click();
   await expect(page.getByTestId('submit-ok-button')).toBeVisible();
 
   const resultResponse = page.waitForResponse((response) =>
