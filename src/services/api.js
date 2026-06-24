@@ -1,14 +1,12 @@
 import axios from 'axios';
 
+let _store;
+export const injectStore = (s) => { _store = s; };
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
 });
-
-let _store = null;
-export function injectStore(store) {
-  _store = store;
-}
 
 api.interceptors.request.use((config) => {
   const token = _store?.getState?.()?.auth?.accessToken;

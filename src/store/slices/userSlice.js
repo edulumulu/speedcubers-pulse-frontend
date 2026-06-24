@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { userService } from '../../services/userService.js';
+import { authService } from '../../services/authService.js';
 
 export const fetchProfile = createAsyncThunk('user/fetchProfile', async (username, { rejectWithValue }) => {
   try {
@@ -27,6 +28,15 @@ export const updateMe = createAsyncThunk('user/updateMe', async (data, { getStat
   }
 });
 
+export const linkWca = createAsyncThunk('user/linkWca', async (wcaId, { getState, rejectWithValue }) => {
+  try {
+    const { accessToken } = getState().auth;
+    return await authService.linkWca(wcaId, accessToken);
+  } catch (err) {
+    return rejectWithValue(err.response?.data?.error || 'Error al vincular el WCA ID');
+  }
+});
+
 export const deleteMe = createAsyncThunk('user/deleteMe', async (_, { getState, rejectWithValue }) => {
   try {
     const { accessToken } = getState().auth;
@@ -35,6 +45,21 @@ export const deleteMe = createAsyncThunk('user/deleteMe', async (_, { getState, 
     return rejectWithValue(err.response?.data?.error || 'Error al eliminar la cuenta');
   }
 });
+
+function mapPublicProfile(payload) {
+  return {
+    ...payload.user,
+    wcaId: payload.wcaProfile?.wcaId ?? null,
+    wca: payload.wcaLiveData
+      ? {
+        ...payload.wcaLiveData,
+        countryIso2: payload.wcaLiveData.countryIso2 ?? payload.wcaProfile?.countryIso2 ?? null,
+      }
+      : payload.wcaProfile
+        ? { countryIso2: payload.wcaProfile.countryIso2 ?? null }
+        : null,
+  };
+}
 
 const userSlice = createSlice({
   name: 'user',
@@ -51,10 +76,14 @@ const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchProfile.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(fetchProfile.pending, (state) => {
+        state.loading = true;
+        state.profile = null;
+        state.error = null;
+      })
       .addCase(fetchProfile.fulfilled, (state, action) => {
         state.loading = false;
-        state.profile = action.payload;
+        state.profile = mapPublicProfile(action.payload);
       })
       .addCase(fetchProfile.rejected, (state, action) => {
         state.loading = false;
@@ -75,6 +104,17 @@ const userSlice = createSlice({
         state.me = { ...action.payload.user, wcaId: state.me?.wcaId ?? null };
       })
       .addCase(updateMe.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(linkWca.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(linkWca.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.me) {
+          state.me = { ...state.me, wcaId: action.payload.wcaProfile?.wcaId ?? state.me.wcaId };
+        }
+      })
+      .addCase(linkWca.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

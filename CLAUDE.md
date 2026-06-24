@@ -2,7 +2,7 @@
 
 Red social para speedcubers españoles: competencias 1v1 en tiempo real con videoconferencia, rankings y presencia online. Proyecto de Fin de Master — MVP en 8 semanas.
 
-**Estado actual**: Fase 1 completada (autenticación). Próxima: Fase 2 (Perfiles de usuario).
+**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B, 6, 7A, 7B-1, 7B-2, 7B-3, 7C-1, 7C-2A y 7C-2B completadas. Siguiente foco: performance, seguridad, documentación API y preparación de deployment.
 
 ## Arquitectura
 
@@ -16,6 +16,8 @@ src/
     competition/   # Lobby, match, result
     ranking/       # Leaderboard, stats
     profile/       # User profile, WCA data
+    video/          # Waiting room and Agora RTC flow
+    presence/       # Socket.io lifecycle for online presence
   components/      # Shared UI components (Button, Modal, etc.)
   hooks/           # Shared hooks (useSocket, useAuth, etc.)
   store/           # Redux Toolkit slices + selectors
@@ -24,20 +26,21 @@ src/
   utils/           # Pure helpers
 ```
 
-**Redux Toolkit** para estado global (auth, ranking, presence). Estado local de componentes con `useState`/`useReducer`. No mezclar: si el estado no se comparte entre features, va local.
+**Redux Toolkit** para estado global (auth, ranking, competition, video, presence). Estado local de componentes con `useState`/`useReducer`. No mezclar: si el estado no se comparte entre features, va local.
 
-**Decisión crítica**: el timer corre 100% en el cliente. El resultado se envía al backend al terminar. El servidor solo valida el rango (0–600s) — no confiar en respuestas del servidor para el tick del timer.
+**Decisión crítica**: el timer corre 100% en el cliente. La inspección se sincroniza por Socket.io, pero cada competidor inicia y para su solve localmente. El resultado se envía al backend al validar `OK`, `+2` o `DNF`; el servidor valida el rango (0–600s), persiste el resultado en la ronda activa, resuelve la ronda cuando ambos usuarios envían y devuelve el estado necesario para mostrar resumen, marcador y siguiente mezcla — no confiar en respuestas del servidor para el tick del timer.
 
 ## Stack
 
-- React 18 + Vite 5
+- React 18 + Vite 7
 - Redux Toolkit (RTK Query para llamadas a la API)
 - React Router 6
-- Tailwind CSS 3 + Shadcn/ui
+- Tailwind CSS 3 + custom shared components
 - Axios (instancia con interceptors para JWT)
 - Socket.io client 4
-- Agora React SDK (videoconferencia)
+- Agora Web SDK video room (camera/mic, local preview, remote stream rendering)
 - Vitest + React Testing Library (tests)
+- Playwright (E2E auth/session, ranking/profile y competición 1v1)
 - ESLint + Prettier
 
 ## Convenciones de commits
@@ -72,20 +75,26 @@ GitFlow simplificado:
 src/
   features/<feature>/__tests__/   # Tests junto a la feature
   components/__tests__/           # Tests de componentes compartidos
+e2e/                              # Tests E2E con Playwright (Fase 7)
+  fixtures/                       # Helpers: createUser(), loginAs(), etc.
+  flows/                          # Specs por flujo de usuario
+playwright.config.js              # Config Playwright: frontend dev server + backend real
 ```
 
 - Tests unitarios con Vitest + React Testing Library
 - No mockear Redux store completo — usar `renderWithProviders` con un store real configurado para tests
 - `msw` para interceptar llamadas HTTP en tests (no mockear axios directamente)
+- **Tests E2E con Playwright** — Fase 7B-1 cubre auth/session; Fase 7B-2 cubre ranking público, filtro de evento y navegación a perfil público; Fase 7B-3 cubre creación/unión de sala y resolución de primera ronda 1v1. Ver plan completo en `../speedcubers-pulse-docs/PLAYWRIGHT_E2E_PLAN.md`
 
 Targets:
-- >80% cobertura global
+- >80% cobertura global (Vitest)
 - >95% en lógica de `auth` y `timer`
 - Cada componente nuevo debe tener al menos un test de render
+- Flujos E2E cubiertos: registro/login, vincular WCA, reto 1v1 completo, leaderboard
 
 ## Seguridad (frontend)
 
-- Nunca almacenar tokens JWT en `localStorage` — usar `httpOnly cookies` o memoria (en RAM con Redux)
+- Nunca almacenar tokens JWT en `localStorage` — access token solo en memoria (Redux) y refresh token en cookie `httpOnly`
 - No mostrar información sensible de otros usuarios sin que el backend lo autorice
 - Validar inputs en cliente antes de enviar (UX), pero confiar en la validación del backend para seguridad
 - No exponer claves de Agora.io en el bundle — el backend genera los tokens RTC
@@ -110,9 +119,28 @@ npm run preview      # Preview del build
 npm test             # Vitest una sola pasada
 npm run test:watch   # Vitest en modo watch
 npm run test:coverage
+npm run test:e2e     # Playwright (requiere backend en http://localhost:3000)
+npm run test:e2e:ui  # Playwright UI
+npm run test:e2e:debug
 npm run lint         # ESLint + Prettier check
 npm run lint:fix     # Auto-fix
 ```
+
+## Convenciones implementadas
+
+- **`injectStore`** (`src/services/api.js`): patrón para evitar importación circular con el store. En `main.jsx` se llama `injectStore(store)` después de crear el store. El interceptor de Axios usa `_store?.getState?.()?.auth?.accessToken`.
+- **`AuthBootstrap`** (`src/features/auth/AuthBootstrap.jsx`): al arrancar la app llama a `POST /auth/refresh` con credenciales/cookie; si hay sesión recuperable restaura `user` y `accessToken` en Redux. `GuestRoute` y `ProtectedRoute` esperan `bootstrapped` antes de redirigir.
+- **`GuestRoute`** (`src/router/GuestRoute.jsx`): redirige a `/` a usuarios ya autenticados (para `/login`, `/register`, `/forgot-password`, `/reset-password`).
+- **Route coverage tests** (`src/components/__tests__/App.test.jsx`): 12 tests que verifican que todas las rutas públicas y protegidas existen. Si se pierden archivos en un merge, los tests fallan inmediatamente.
+- **Forgot/Reset password**: `ForgotPasswordPage` (anti-enumeración, siempre muestra éxito) y `ResetPasswordPage` (lee `?token=` de la URL, valida contraseña + confirmación, redirige a `/login` con mensaje de éxito).
+- **WCA ID inmutable en perfil**: `EditProfileForm` muestra el WCA ID vinculado como solo lectura con icono de candado. Si no hay WCA ID, muestra input con validación de formato antes de llamar al backend.
+- **Video room** (`src/features/video/VideoRoomPage.jsx`): ruta protegida `/compete`, crea o une sala mediante `competitionService`, solicita token RTC a `POST /video/token` con el `channelName` de backend, entra al canal con Agora Web SDK, publica cámara/micrófono, renderiza preview local y stream remoto. Mientras espera rival mantiene el código visible y permite copiarlo; cuando la sala está `active`, cambia a vista tipo videollamada con rival como vídeo principal, cámara propia flotante, detalles técnicos plegados, marcador persistente en cabecera y timer en panel lateral.
+- **Competition socket** (`src/services/competitionSocketService.js`): conexión Socket.io autenticada para `competition:join`, `competition:inspection:start`, `competition:round:changed` y `competition:round-final:dismiss`. Sincroniza inicio de inspección, refresco de ronda y paso conjunto a marcador/nueva mezcla.
+- **Competition timer** (`src/features/timer/CompetitionTimerPanel.jsx`): timer local con `performance.now()`. El flujo activo es `mezcla → inspección → solve → revisión → resultado de ronda → marcador acumulado → nueva mezcla`. `Tab` o barra espaciadora inician inspección desde mezcla; el inicio de inspección se sincroniza para ambos competidores. La cuenta avisa en 8s y 12s, aplica `+2` si el solve empieza entre 15s y 17s, envía DNF automático después de 17s y permite acumular `+4` si también se pulsa `+2` manual. El resultado de ronda queda fijo hasta que un participante confirma, después ambos ven marcador acumulado durante 2s y la siguiente mezcla queda bloqueada 9s antes de poder iniciar inspección.
+- **Presence connection** (`src/features/presence/PresenceConnection.jsx`): conecta Socket.io cuando existe `accessToken`, envía heartbeat cada 30s, recibe eventos `presence:online`/`presence:offline` y actualiza `presenceSlice`.
+- **Playwright auth/session E2E** (`e2e/flows/auth-session.spec.js`): registra un usuario único, valida sesión tras recarga por `POST /auth/refresh`, confirma que no hay tokens en `localStorage`/`sessionStorage`, prueba logout, redirección protegida y login posterior.
+- **Playwright ranking/profile E2E** (`e2e/flows/ranking-profile.spec.js`): valida ranking público, filtro de evento `2x2`, enlace a perfil público y ausencia de email privado.
+- **Playwright competition 1v1 E2E** (`e2e/flows/competition-1v1.spec.js`): registra dos usuarios únicos, crea sala, une rival por código, usa RTC fake solo en E2E, envía resultados de ambos participantes y valida resolución de ronda y apertura de ronda 2.
 
 ## Antes de hacer push
 
@@ -129,15 +157,31 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 
 ## Fases del MVP
 
+## Ranking — notas para el leaderboard
+
+- Ordenar por **Elo** (descendente). Mostrar: posición, username, Elo, wins, losses, DNF count, PB, average time.
+- Si el usuario tiene WCA ID vinculado: mostrar su ranking WCA oficial en la categoría del filtro activo. El backend lo devuelve ya resuelto (WCA API + Redis cache 24h).
+- Filtro por evento (por defecto 3x3). El cambio de filtro hace un nuevo fetch al backend.
+
+## Fases del MVP
+
 | Fase | Contenido | Estado |
 |------|-----------|--------|
 | 0 | Setup e infraestructura | ✅ |
 | 1 | Autenticación (login/register + WCA opcional) | ✅ |
-| 2 | Perfiles de usuario | ⏳ |
-| 3 | Rankings + leaderboard | — |
-| 4 | Videoconferencia (Agora.io) | — |
-| 5 | Sistema de timing (cliente) | — |
-| 6 | Presencia online | — |
+| 2 | Perfiles de usuario | ✅ |
+| 3 | Rankings + leaderboard | ✅ |
+| 4C | Salas de competición con Agora.io: crear/unirse por código + RTC flow | ✅ |
+| 5A | Timer local + submit básico de resultado por ronda | ✅ |
+| 5B | Resumen de ronda, espera del rival y avance a la siguiente ronda | ✅ |
+| 6 | Presencia online en navbar con Socket.io + Redux | ✅ |
+| 7A | Estabilidad de sesión: recuperación al recargar sin `localStorage` | ✅ |
+| 7B-1 | Playwright auth/session E2E foundation | ✅ |
+| 7B-2 | Playwright ranking/profile E2E | ✅ |
+| 7B-3 | Playwright competition 1v1 E2E | ✅ |
+| 7C-1 | Manual Playwright pre-release validation + pre-deploy hardening | ✅ |
+| 7C-2A | Pulido visual/accesibilidad de sala activa en `/compete` | ✅ |
+| 7C-2B | Lógica de inspección, penalizaciones, scrambles y marcador | ✅ |
 | 7 | Integración, e2e, polish | — |
 | 8 | Deployment (Railway/Vercel) | — |
 

@@ -10,11 +10,20 @@ export const authService = {
   logout: (token) =>
     api.post('/auth/logout', {}, { headers: { Authorization: `Bearer ${token}` } }),
 
-  refresh: (refreshToken) =>
-    api.post('/auth/refresh', { refresh_token: refreshToken }).then((r) => r.data),
+  refresh: () =>
+    api.post('/auth/refresh', {}).then((r) => r.data),
 
   linkWca: (wcaId, token) =>
     api.post('/auth/link-wca', { wca_id: wcaId }, {
       headers: { Authorization: `Bearer ${token}` },
     }).then((r) => r.data),
+
+  checkAvailability: (params) =>
+    api.get('/auth/check', { params }).then((r) => r.data),
+
+  forgotPassword: (email) =>
+    api.post('/auth/forgot-password', { email }).then((r) => r.data),
+
+  resetPassword: (token, password) =>
+    api.post('/auth/reset-password', { token, password }).then((r) => r.data),
 };

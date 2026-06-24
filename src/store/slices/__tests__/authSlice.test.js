@@ -1,5 +1,15 @@
 import { configureStore } from '@reduxjs/toolkit';
-import authReducer, { clearAuth, clearError, setTokens, selectIsAuthenticated, selectUser } from '../authSlice.js';
+import authReducer, {
+  bootstrapAuth,
+  clearAuth,
+  clearError,
+  logout,
+  register,
+  selectAuthBootstrapped,
+  selectIsAuthenticated,
+  selectUser,
+  setTokens,
+} from '../authSlice.js';
 
 const makeStore = (preloaded = {}) =>
   configureStore({ reducer: { auth: authReducer }, preloadedState: { auth: preloaded } });
@@ -12,6 +22,7 @@ describe('authSlice reducers', () => {
     expect(state.user).toBeNull();
     expect(state.accessToken).toBeNull();
     expect(state.refreshToken).toBeNull();
+    expect(state.bootstrapped).toBe(true);
   });
 
   it('clearError removes error without touching user', () => {
@@ -26,6 +37,58 @@ describe('authSlice reducers', () => {
     store.dispatch(setTokens({ accessToken: 'acc', refreshToken: 'ref' }));
     expect(store.getState().auth.accessToken).toBe('acc');
     expect(store.getState().auth.refreshToken).toBe('ref');
+  });
+});
+
+describe('authSlice async thunk reducers', () => {
+  it('register.pending sets loading true and clears error', () => {
+    const store = makeStore({ user: null, accessToken: null, refreshToken: null, loading: false, error: 'old error' });
+    store.dispatch({ type: register.pending.type });
+    const state = store.getState().auth;
+    expect(state.loading).toBe(true);
+    expect(state.error).toBeNull();
+  });
+
+  it('register.rejected sets error and clears loading', () => {
+    const store = makeStore({ user: null, accessToken: null, refreshToken: null, loading: true, error: null });
+    store.dispatch({ type: register.rejected.type, payload: 'Username taken' });
+    const state = store.getState().auth;
+    expect(state.loading).toBe(false);
+    expect(state.error).toBe('Username taken');
+  });
+
+  it('logout.fulfilled clears user and tokens', () => {
+    const store = makeStore({ user: { id: '1' }, accessToken: 'tok', refreshToken: 'ref', loading: false, error: null });
+    store.dispatch({ type: logout.fulfilled.type });
+    const state = store.getState().auth;
+    expect(state.user).toBeNull();
+    expect(state.accessToken).toBeNull();
+    expect(state.refreshToken).toBeNull();
+    expect(state.bootstrapped).toBe(true);
+  });
+
+  it('bootstrapAuth.fulfilled restores user and access token', () => {
+    const user = { id: '1', username: 'alice' };
+    const store = makeStore({ user: null, accessToken: null, refreshToken: null, loading: true, bootstrapped: false, error: null });
+    store.dispatch({
+      type: bootstrapAuth.fulfilled.type,
+      payload: { user, tokens: { accessToken: 'acc', refreshToken: 'ref' } },
+    });
+    const state = store.getState().auth;
+    expect(state.user).toEqual(user);
+    expect(state.accessToken).toBe('acc');
+    expect(state.refreshToken).toBeNull();
+    expect(state.bootstrapped).toBe(true);
+  });
+
+  it('bootstrapAuth.rejected marks bootstrap as finished without auth', () => {
+    const store = makeStore({ user: null, accessToken: null, refreshToken: null, loading: true, bootstrapped: false, error: null });
+    store.dispatch({ type: bootstrapAuth.rejected.type, payload: 'No active session' });
+    const state = store.getState().auth;
+    expect(state.user).toBeNull();
+    expect(state.accessToken).toBeNull();
+    expect(state.loading).toBe(false);
+    expect(state.bootstrapped).toBe(true);
   });
 });
 
@@ -44,5 +107,10 @@ describe('authSlice selectors', () => {
     const user = { id: '1', username: 'alice' };
     const state = { auth: { user, accessToken: 'tok', refreshToken: null, loading: false, error: null } };
     expect(selectUser(state)).toEqual(user);
+  });
+
+  it('selectAuthBootstrapped returns bootstrap status', () => {
+    const state = { auth: { accessToken: null, user: null, refreshToken: null, loading: false, bootstrapped: true, error: null } };
+    expect(selectAuthBootstrapped(state)).toBe(true);
   });
 });

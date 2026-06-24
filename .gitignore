@@ -20,6 +20,11 @@ npm-debug.log*
 # Coverage
 coverage/
 
+# Playwright
+test-results/
+playwright-report/
+e2e/.auth/
+
 # Vitest
 .vitest-cache/
 
