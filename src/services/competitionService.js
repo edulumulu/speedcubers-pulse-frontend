@@ -7,6 +7,7 @@ function normalizeRoomResponse(data) {
     id: roomData?.id ?? roomData?.roomId ?? null,
     code: roomData?.code ?? roomData?.roomCode ?? roomData?.codigo ?? '',
     channelName: roomData?.channelName ?? roomData?.channel ?? roomData?.videoChannelName ?? '',
+    event: roomData?.event ?? '3x3',
     status: roomData?.status ?? 'waiting',
     host: roomData?.host ?? null,
     guest: roomData?.guest ?? null,
@@ -21,8 +22,8 @@ function normalizeResultResponse(data) {
 }
 
 export const competitionService = {
-  createRoom() {
-    return api.post('/competitions').then((r) => normalizeRoomResponse(r.data));
+  createRoom({ event = '3x3' } = {}) {
+    return api.post('/competitions', { event }).then((r) => normalizeRoomResponse(r.data));
   },
 
   joinRoom({ code }) {
@@ -31,6 +32,10 @@ export const competitionService = {
 
   getRoom({ code }) {
     return api.get(`/competitions/${code}`).then((r) => normalizeRoomResponse(r.data));
+  },
+
+  updateRoundEvent({ code, event }) {
+    return api.patch(`/competitions/${code}/round/event`, { event }).then((r) => normalizeRoomResponse(r.data));
   },
 
   submitResult({ code, timeMs, penalty = 'none' }) {

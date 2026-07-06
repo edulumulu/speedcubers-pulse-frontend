@@ -12,6 +12,7 @@ import {
   selectCompetitionRoom,
   selectCompetitionStatus,
   submitCompetitionResult,
+  updateCompetitionRoundEvent,
 } from '../../store/slices/competitionSlice.js';
 import {
   leaveVideoRoom,
@@ -28,6 +29,17 @@ import { videoService } from '../../services/videoService.js';
 
 const VIDEO_QUOTA_EXHAUSTED_MESSAGE = 'Se ha agotado tu prueba gratuita mensual';
 const VIDEO_USAGE_REPORT_INTERVAL_MS = 30000;
+const EVENT_OPTIONS = [
+  { value: '3x3', label: '3x3' },
+  { value: '2x2', label: '2x2' },
+  { value: '4x4', label: '4x4' },
+  { value: '5x5', label: '5x5' },
+  { value: '6x6', label: '6x6' },
+  { value: '7x7', label: '7x7' },
+  { value: 'oh', label: '3x3 OH' },
+  { value: 'pyraminx', label: 'Pyraminx' },
+  { value: 'skewb', label: 'Skewb' },
+];
 
 function roundNumber(round) {
   return round?.number ?? round?.round_number ?? null;
@@ -72,6 +84,7 @@ export function VideoRoomPage() {
   const status = useSelector(selectVideoStatus);
   const error = useSelector(selectVideoError);
   const [joinCode, setJoinCode] = useState('');
+  const [selectedEvent, setSelectedEvent] = useState('3x3');
   const [copyStatus, setCopyStatus] = useState('idle');
   const [competitionSocket, setCompetitionSocket] = useState(null);
   const [inspectionStart, setInspectionStart] = useState(null);
@@ -101,6 +114,7 @@ export function VideoRoomPage() {
   const roomCode = competitionRoom?.code;
   const isCompetitionActive = competitionRoom?.status === 'active';
   const activeRoundNumber = roundNumber(competitionRoom?.activeRound);
+  const activeEvent = competitionRoom?.activeRound?.event ?? competitionRoom?.event ?? selectedEvent;
   const {
     ownPlayer,
     rivalPlayer,
@@ -208,6 +222,10 @@ export function VideoRoomPage() {
   }, [competitionRoom?.activeRound?.id]);
 
   useEffect(() => {
+    if (activeEvent) setSelectedEvent(activeEvent);
+  }, [activeEvent]);
+
+  useEffect(() => {
     if (!accessToken || !roomCode || !isCompetitionActive) return undefined;
 
     const socket = competitionSocketService.connect({ token: accessToken });
@@ -261,7 +279,7 @@ export function VideoRoomPage() {
   }
 
   function handleCreateRoom() {
-    openVideoRoom(createCompetitionRoom());
+    openVideoRoom(createCompetitionRoom({ event: selectedEvent }));
   }
 
   function handleJoinRoom(e) {
@@ -304,6 +322,21 @@ export function VideoRoomPage() {
     competitionSocket.emit('competition:join', { code: roomCode }, () => {
       competitionSocket.emit('competition:inspection:start', payload);
     });
+  }
+
+  async function handleChangeRoundEvent(event) {
+    setSelectedEvent(event);
+    if (!roomCode || !competitionRoom?.activeRound?.id) return;
+
+    try {
+      const nextRoom = await dispatch(updateCompetitionRoundEvent({ code: roomCode, event })).unwrap();
+      competitionSocket?.emit('competition:round:changed', {
+        code: roomCode,
+        roundId: nextRoom?.activeRound?.id ?? competitionRoom.activeRound.id,
+      });
+    } catch {
+      // The rejected thunk stores the visible error in Redux.
+    }
   }
 
   function handleDismissRoundFinal({ roundId }) {
@@ -366,6 +399,21 @@ export function VideoRoomPage() {
             <div className="card">
               <div className="mb-5">
                 <p className="form-label mb-2">Crear sala</p>
+                <label className="form-label" htmlFor="initial-event">Cubo</label>
+                <select
+                  id="initial-event"
+                  className="form-input"
+                  value={selectedEvent}
+                  onChange={(event) => setSelectedEvent(event.target.value)}
+                  disabled={controlsDisabled}
+                  data-testid="initial-event-select"
+                >
+                  {EVENT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
                 <button
                   className="btn-primary"
                   type="button"
@@ -521,6 +569,9 @@ export function VideoRoomPage() {
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                <span className="rounded-md border border-border-light bg-bg px-3 py-2 text-sm text-[#e2f0ff]" data-testid="active-event-label">
+                  {EVENT_OPTIONS.find((option) => option.value === activeEvent)?.label ?? activeEvent}
+                </span>
                 <div
                   className="flex items-center gap-2 rounded-md border border-border-light bg-bg px-3 py-2"
                   aria-label={`Marcador de la sala: tú ${ownScore}, ${rivalUsername} ${rivalScore}`}
@@ -633,6 +684,9 @@ export function VideoRoomPage() {
                 activeRound={competitionRoom.activeRound}
                 latestCompletedRound={competitionRoom.latestCompletedRound}
                 matchScore={competitionRoom.matchScore}
+                event={activeEvent}
+                eventOptions={EVENT_OPTIONS}
+                onChangeRoundEvent={handleChangeRoundEvent}
                 currentUser={currentUser}
                 onSubmit={handleSubmitResult}
                 submitStatus={competitionResultStatus}

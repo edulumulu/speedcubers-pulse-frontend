@@ -21,9 +21,9 @@ function shouldClearSubmittedResult(currentResult, nextRoom) {
 
 export const createCompetitionRoom = createAsyncThunk(
   'competition/createRoom',
-  async (_, { rejectWithValue }) => {
+  async ({ event = '3x3' } = {}, { rejectWithValue }) => {
     try {
-      return await competitionService.createRoom();
+      return await competitionService.createRoom({ event });
     } catch (err) {
       return rejectWithValue(roomError(err));
     }
@@ -59,6 +59,17 @@ export const submitCompetitionResult = createAsyncThunk(
       return await competitionService.submitResult({ code, timeMs, penalty });
     } catch (err) {
       return rejectWithValue(resultError(err));
+    }
+  },
+);
+
+export const updateCompetitionRoundEvent = createAsyncThunk(
+  'competition/updateRoundEvent',
+  async ({ code, event }, { rejectWithValue }) => {
+    try {
+      return await competitionService.updateRoundEvent({ code, event });
+    } catch (err) {
+      return rejectWithValue(roomError(err));
     }
   },
 );
@@ -123,6 +134,16 @@ const competitionSlice = createSlice({
         }
       })
       .addCase(refreshCompetitionRoom.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+      .addCase(updateCompetitionRoundEvent.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(updateCompetitionRoundEvent.fulfilled, (state, action) => {
+        state.status = 'ready';
+        state.room = action.payload;
+      })
+      .addCase(updateCompetitionRoundEvent.rejected, (state, action) => {
         state.error = action.payload;
       })
       .addCase(submitCompetitionResult.pending, (state) => {
