@@ -24,6 +24,7 @@ vi.mock('../../../services/competitionService.js', () => ({
 vi.mock('../../../services/videoService.js', () => ({
   videoService: {
     requestToken: vi.fn(),
+    reportUsage: vi.fn(),
   },
 }));
 
@@ -62,6 +63,12 @@ const readyRoom = {
   token: 'rtc-token',
   uid: 42,
   expiresAt: '2026-06-10T12:00:00.000Z',
+  quota: {
+    limitSeconds: 3600,
+    usedSeconds: 0,
+    remainingSeconds: 3600,
+    resetAt: '2026-07-01T00:00:00.000Z',
+  },
 };
 
 const idleCompetitionState = {
@@ -136,6 +143,12 @@ describe('VideoRoomPage', () => {
     vi.clearAllMocks();
     bindRemoteVideo = vi.fn();
     leaveRtcRoom = vi.fn().mockResolvedValue(undefined);
+    videoService.reportUsage.mockResolvedValue({
+      limitSeconds: 3600,
+      usedSeconds: 0,
+      remainingSeconds: 3600,
+      resetAt: '2026-07-01T00:00:00.000Z',
+    });
     mockAgoraRoomState();
     useAgoraRoom.mockImplementation(() => agoraRoomState);
   });
@@ -310,6 +323,25 @@ describe('VideoRoomPage', () => {
       resultStatus: 'idle',
       resultError: null,
     });
+  });
+
+  it('shows the video quota dialog when the monthly free trial is exhausted', async () => {
+    competitionService.createRoom.mockResolvedValueOnce(waitingCompetitionRoom);
+    videoService.requestToken.mockRejectedValueOnce({
+      response: {
+        data: {
+          error: 'Se ha agotado tu prueba gratuita mensual',
+          code: 'VIDEO_QUOTA_EXCEEDED',
+        },
+      },
+    });
+
+    const { user } = renderVideoRoom();
+
+    await user.click(screen.getByRole('button', { name: /crear sala/i }));
+
+    expect(await screen.findByRole('alertdialog', { name: /límite de video alcanzado/i })).toBeInTheDocument();
+    expect(screen.getByText('Se ha agotado tu prueba gratuita mensual')).toBeInTheDocument();
   });
 
   it('submits a DNF result from an active competition room', async () => {

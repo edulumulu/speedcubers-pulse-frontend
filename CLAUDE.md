@@ -2,7 +2,7 @@
 
 Red social para speedcubers españoles: competencias 1v1 en tiempo real con videoconferencia, rankings y presencia online. Proyecto de Fin de Master — MVP en 8 semanas.
 
-**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B, 6, 7A, 7B-1, 7B-2, 7B-3, 7C-1, 7C-2A y 7C-2B completadas. Siguiente foco: performance, seguridad, documentación API y preparación de deployment.
+**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B, 6, 7A, 7B-1, 7B-2, 7B-3, 7C-1, 7C-2A, 7C-2B y 7D-1 completadas. Siguiente foco: performance, seguridad, documentación API y preparación de deployment.
 
 ## Arquitectura
 
@@ -134,7 +134,7 @@ npm run lint:fix     # Auto-fix
 - **Route coverage tests** (`src/components/__tests__/App.test.jsx`): 12 tests que verifican que todas las rutas públicas y protegidas existen. Si se pierden archivos en un merge, los tests fallan inmediatamente.
 - **Forgot/Reset password**: `ForgotPasswordPage` (anti-enumeración, siempre muestra éxito) y `ResetPasswordPage` (lee `?token=` de la URL, valida contraseña + confirmación, redirige a `/login` con mensaje de éxito).
 - **WCA ID inmutable en perfil**: `EditProfileForm` muestra el WCA ID vinculado como solo lectura con icono de candado. Si no hay WCA ID, muestra input con validación de formato antes de llamar al backend.
-- **Video room** (`src/features/video/VideoRoomPage.jsx`): ruta protegida `/compete`, crea o une sala mediante `competitionService`, solicita token RTC a `POST /video/token` con el `channelName` de backend, entra al canal con Agora Web SDK, publica cámara/micrófono, renderiza preview local y stream remoto. Mientras espera rival mantiene el código visible y permite copiarlo; cuando la sala está `active`, cambia a vista tipo videollamada con rival como vídeo principal, cámara propia flotante, detalles técnicos plegados, marcador persistente en cabecera y timer en panel lateral.
+- **Video room** (`src/features/video/VideoRoomPage.jsx`): ruta protegida `/compete`, crea o une sala mediante `competitionService`, solicita token RTC a `POST /video/token` con el `channelName` de backend, entra al canal con Agora Web SDK, publica cámara/micrófono, renderiza preview local y stream remoto. Mientras espera rival mantiene el código visible y permite copiarlo; cuando la sala está `active`, cambia a vista tipo videollamada con rival como vídeo principal, cámara propia flotante, detalles técnicos plegados, marcador persistente en cabecera y timer en panel lateral. La respuesta del token incluye `quota`; la sala reporta segundos consumidos a `POST /video/usage`, corta RTC si se agota la cuota y muestra el diálogo de prueba gratuita mensual agotada.
 - **Competition socket** (`src/services/competitionSocketService.js`): conexión Socket.io autenticada para `competition:join`, `competition:inspection:start`, `competition:round:changed` y `competition:round-final:dismiss`. Sincroniza inicio de inspección, refresco de ronda y paso conjunto a marcador/nueva mezcla.
 - **Competition timer** (`src/features/timer/CompetitionTimerPanel.jsx`): timer local con `performance.now()`. El flujo activo es `mezcla → inspección → solve → revisión → resultado de ronda → marcador acumulado → nueva mezcla`. `Tab` o barra espaciadora inician inspección desde mezcla; el inicio de inspección se sincroniza para ambos competidores. La cuenta avisa en 8s y 12s, aplica `+2` si el solve empieza entre 15s y 17s, envía DNF automático después de 17s y permite acumular `+4` si también se pulsa `+2` manual. El resultado de ronda queda fijo hasta que un participante confirma, después ambos ven marcador acumulado durante 2s y la siguiente mezcla queda bloqueada 9s antes de poder iniciar inspección.
 - **Presence connection** (`src/features/presence/PresenceConnection.jsx`): conecta Socket.io cuando existe `accessToken`, envía heartbeat cada 30s, recibe eventos `presence:online`/`presence:offline` y actualiza `presenceSlice`.
@@ -182,6 +182,7 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 | 7C-1 | Manual Playwright pre-release validation + pre-deploy hardening | ✅ |
 | 7C-2A | Pulido visual/accesibilidad de sala activa en `/compete` | ✅ |
 | 7C-2B | Lógica de inspección, penalizaciones, scrambles y marcador | ✅ |
+| 7D-1 | Cuota mensual gratuita de vídeo: reporte de uso, corte RTC y diálogo de límite | ✅ |
 | 7 | Integración, e2e, polish | — |
 | 8 | Deployment (Railway/Vercel) | — |
 
