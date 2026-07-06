@@ -9,6 +9,7 @@ function normalizeTokenResponse(data, fallbackChannelName) {
     token: tokenData?.token ?? '',
     uid: tokenData?.uid ?? tokenData?.userId ?? null,
     expiresAt: tokenData?.expiresAt ?? tokenData?.expires_at ?? null,
+    quota: tokenData?.quota ?? null,
   };
 }
 
@@ -17,5 +18,10 @@ export const videoService = {
     return api
       .post('/video/token', { channelName })
       .then((r) => normalizeTokenResponse(r.data, channelName));
+  },
+  reportUsage({ seconds }) {
+    return api
+      .post('/video/usage', { seconds })
+      .then((r) => r.data?.quota ?? null);
   },
 };

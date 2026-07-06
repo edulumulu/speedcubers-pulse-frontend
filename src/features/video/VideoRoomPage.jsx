@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   createCompetitionRoom,
@@ -24,6 +24,10 @@ import { selectUser } from '../../store/slices/authSlice.js';
 import { CompetitionTimerPanel } from '../timer/CompetitionTimerPanel.jsx';
 import { useAgoraRoom } from './useAgoraRoom.js';
 import { competitionSocketService } from '../../services/competitionSocketService.js';
+import { videoService } from '../../services/videoService.js';
+
+const VIDEO_QUOTA_EXHAUSTED_MESSAGE = 'Se ha agotado tu prueba gratuita mensual';
+const VIDEO_USAGE_REPORT_INTERVAL_MS = 30000;
 
 function roundNumber(round) {
   return round?.number ?? round?.round_number ?? null;
@@ -72,6 +76,12 @@ export function VideoRoomPage() {
   const [competitionSocket, setCompetitionSocket] = useState(null);
   const [inspectionStart, setInspectionStart] = useState(null);
   const [roundFinalDismiss, setRoundFinalDismiss] = useState(null);
+  const [quotaExpiredMessage, setQuotaExpiredMessage] = useState(null);
+  const videoUsageRef = useRef({
+    roomKey: null,
+    lastReportedAt: null,
+    expired: false,
+  });
   const {
     localVideoRef,
     remoteUsers,
@@ -85,7 +95,7 @@ export function VideoRoomPage() {
   const isReady = status === 'ready' && room;
   const isJoiningRtc = rtcStatus === 'joining';
   const isConnectedRtc = rtcStatus === 'connected';
-  const visibleError = competitionError || error || rtcError;
+  const visibleError = quotaExpiredMessage ? null : competitionError || error || rtcError;
   const hasCompetitionRoom = Boolean(competitionRoom);
   const controlsDisabled = isLoading || hasCompetitionRoom;
   const roomCode = competitionRoom?.code;
@@ -105,6 +115,83 @@ export function VideoRoomPage() {
       && (activeRoundNumber === null || activeRoundNumber <= submittedRoundNumber)
       && !competitionResult?.nextRound,
   );
+
+  const reportCurrentVideoUsage = useCallback(async () => {
+    if (!room || rtcStatus !== 'connected') return;
+
+    const roomKey = `${room.channelName}:${room.uid}`;
+    const currentUsage = videoUsageRef.current;
+    if (currentUsage.roomKey !== roomKey || !currentUsage.lastReportedAt) return;
+
+    const now = Date.now();
+    const seconds = Math.floor((now - currentUsage.lastReportedAt) / 1000);
+    if (seconds < 1) return;
+
+    const previousReportedAt = currentUsage.lastReportedAt;
+    videoUsageRef.current = {
+      ...currentUsage,
+      lastReportedAt: now,
+    };
+
+    try {
+      const quota = await videoService.reportUsage({ seconds });
+      if (quota?.remainingSeconds <= 0) {
+        setQuotaExpiredMessage(VIDEO_QUOTA_EXHAUSTED_MESSAGE);
+      }
+    } catch {
+      videoUsageRef.current = {
+        ...videoUsageRef.current,
+        lastReportedAt: previousReportedAt,
+      };
+    }
+  }, [room, rtcStatus]);
+
+  const expireVideoQuota = useCallback(async () => {
+    if (videoUsageRef.current.expired) return;
+    videoUsageRef.current = {
+      ...videoUsageRef.current,
+      expired: true,
+    };
+    setQuotaExpiredMessage(VIDEO_QUOTA_EXHAUSTED_MESSAGE);
+    await reportCurrentVideoUsage();
+    await leaveRtcRoom();
+    dispatch(leaveVideoRoom());
+    dispatch(leaveCompetitionRoom());
+  }, [dispatch, leaveRtcRoom, reportCurrentVideoUsage]);
+
+  useEffect(() => {
+    if (!room) return;
+    videoUsageRef.current = {
+      roomKey: `${room.channelName}:${room.uid}`,
+      lastReportedAt: Date.now(),
+      expired: false,
+    };
+    setQuotaExpiredMessage(null);
+  }, [room]);
+
+  useEffect(() => {
+    if (error === VIDEO_QUOTA_EXHAUSTED_MESSAGE) {
+      setQuotaExpiredMessage(VIDEO_QUOTA_EXHAUSTED_MESSAGE);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (!room?.quota || rtcStatus !== 'connected') return undefined;
+
+    const remainingMs = Math.max(0, room.quota.remainingSeconds ?? 0) * 1000;
+    const intervalId = window.setInterval(() => {
+      reportCurrentVideoUsage();
+    }, VIDEO_USAGE_REPORT_INTERVAL_MS);
+    const timeoutId = window.setTimeout(() => {
+      expireVideoQuota();
+    }, remainingMs);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.clearTimeout(timeoutId);
+      reportCurrentVideoUsage();
+    };
+  }, [expireVideoQuota, reportCurrentVideoUsage, room?.quota, rtcStatus]);
 
   useEffect(() => {
     if (!roomCode || (isCompetitionActive && !isWaitingForNextRound)) return undefined;
@@ -185,6 +272,7 @@ export function VideoRoomPage() {
   }
 
   async function handleLeave() {
+    await reportCurrentVideoUsage();
     await leaveRtcRoom();
     dispatch(leaveVideoRoom());
     dispatch(leaveCompetitionRoom());
@@ -251,6 +339,21 @@ export function VideoRoomPage() {
 
   return (
     <main className="min-h-[calc(100vh-65px)] max-w-7xl mx-auto px-4 py-6" data-testid="compete-page">
+      {quotaExpiredMessage && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 px-4" role="alertdialog" aria-modal="true" aria-labelledby="video-quota-title">
+          <div className="w-full max-w-md rounded-lg border border-red-400/30 bg-surface p-5 shadow-2xl">
+            <h2 id="video-quota-title" className="text-lg font-semibold text-[#e2f0ff]">Límite de video alcanzado</h2>
+            <p className="mt-2 text-sm text-muted">{quotaExpiredMessage}</p>
+            <button
+              className="btn-primary mt-5"
+              type="button"
+              onClick={() => setQuotaExpiredMessage(null)}
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col gap-6">
         <header className="border-b border-border/50 pb-4">
           <p className="text-xs font-mono uppercase text-accent tracking-widest">Competición 1v1</p>
