@@ -96,7 +96,10 @@ export function CompetitionTimerPanel({
   activeRound = null,
   latestCompletedRound = null,
   matchScore = null,
+  event = '3x3',
+  eventOptions = [],
   currentUser = null,
+  onChangeRoundEvent = null,
   onSubmit,
   onStartInspection = null,
   inspectionStartSignal = null,
@@ -411,6 +414,7 @@ export function CompetitionTimerPanel({
   const submittedPenalty = submittedResult ? resultPenalty(submittedResult) : 'none';
   const resolution = roundResolution(submittedResult) ?? (!isWaitingForOpponent ? latestCompletedRound?.resolution : null);
   const isRoundFinal = showRoundFinal && Boolean(resolution);
+  const canChangeRoundEvent = phase === 'scramble' && !isRoundFinal && !showMatchScore && !isSubmitting && !isWaitingForOpponent;
   const scorePlayers = [matchScore?.host, matchScore?.guest].filter(Boolean);
   const ownScorePlayer = scorePlayers.find((player) => player.id && player.id === currentUser?.id) ?? matchScore?.host ?? null;
   const rivalScorePlayer = scorePlayers.find((player) => player.id !== ownScorePlayer?.id) ?? matchScore?.guest ?? null;
@@ -514,6 +518,27 @@ export function CompetitionTimerPanel({
 
       {activeScramble && phase === 'scramble' && !isRoundFinal && !showMatchScore && (
         <div className="mt-4 rounded-md border border-accent/25 bg-accent/5 px-4 py-5 text-center">
+          {eventOptions.length > 0 && (
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <label className="form-label mb-0" htmlFor="round-event">
+                Cubo
+              </label>
+              <select
+                id="round-event"
+                className="form-input sm:max-w-40"
+                value={event}
+                onChange={(changeEvent) => onChangeRoundEvent?.(changeEvent.target.value)}
+                disabled={!canChangeRoundEvent || !onChangeRoundEvent}
+                data-testid="round-event-select"
+              >
+                {eventOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <p className="font-mono text-xl leading-relaxed text-[#e2f0ff] break-words">{activeScramble}</p>
         </div>
       )}
@@ -694,9 +719,16 @@ CompetitionTimerPanel.propTypes = {
   activeRound: PropTypes.shape({
     id: PropTypes.string,
     number: PropTypes.number,
+    event: PropTypes.string,
     scramble: PropTypes.string,
     status: PropTypes.string,
   }),
+  event: PropTypes.string,
+  eventOptions: PropTypes.arrayOf(PropTypes.shape({
+    value: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+  })),
+  onChangeRoundEvent: PropTypes.func,
   onStartInspection: PropTypes.func,
   inspectionStartSignal: PropTypes.shape({
     roundId: PropTypes.string,

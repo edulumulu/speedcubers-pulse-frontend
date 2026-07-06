@@ -18,6 +18,7 @@ vi.mock('../../../services/competitionService.js', () => ({
     getRoom: vi.fn(),
     joinRoom: vi.fn(),
     submitResult: vi.fn(),
+    updateRoundEvent: vi.fn(),
   },
 }));
 
@@ -41,6 +42,7 @@ const competitionRoom = {
   id: 'room-1',
   code: 'ABC123',
   channelName: 'match-test',
+  event: '3x3',
   status: 'active',
   host: { id: '1', username: 'edulumulu' },
   guest: { id: '2', username: 'rival' },
@@ -161,6 +163,7 @@ describe('VideoRoomPage', () => {
     renderVideoRoom();
 
     expect(screen.getByRole('button', { name: /crear sala/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/cubo/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/código de sala/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /unirse con código/i })).toBeInTheDocument();
     expect(screen.getByText('Esperando sala de competencia')).toBeInTheDocument();
@@ -180,7 +183,7 @@ describe('VideoRoomPage', () => {
     await user.click(screen.getByRole('button', { name: /crear sala/i }));
 
     await waitFor(() => {
-      expect(competitionService.createRoom).toHaveBeenCalledTimes(1);
+      expect(competitionService.createRoom).toHaveBeenCalledWith({ event: '3x3' });
       expect(videoService.requestToken).toHaveBeenCalledWith({ channelName: 'match-test' });
     });
     expect(await screen.findByTestId('room-code')).toHaveTextContent('ABC123');
@@ -201,6 +204,20 @@ describe('VideoRoomPage', () => {
       room: readyRoom,
       status: 'ready',
       error: null,
+    });
+  });
+
+  it('uses the selected cube when creating a competition room', async () => {
+    competitionService.createRoom.mockResolvedValueOnce({ ...waitingCompetitionRoom, event: '2x2' });
+    videoService.requestToken.mockResolvedValueOnce(readyRoom);
+
+    const { user } = renderVideoRoom();
+
+    await user.selectOptions(screen.getByLabelText(/cubo/i), '2x2');
+    await user.click(screen.getByRole('button', { name: /crear sala/i }));
+
+    await waitFor(() => {
+      expect(competitionService.createRoom).toHaveBeenCalledWith({ event: '2x2' });
     });
   });
 
@@ -296,6 +313,7 @@ describe('VideoRoomPage', () => {
     });
 
     const score = screen.getByTestId('persistent-match-score');
+    expect(screen.getByTestId('active-event-label')).toHaveTextContent('3x3');
     expect(score).toHaveAccessibleName('Marcador de la sala: tú 2, rival 1');
     expect(score).toHaveTextContent('2');
     expect(score).toHaveTextContent('1');
