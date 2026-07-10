@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { login, selectAuthLoading, selectAuthError, selectIsAuthenticated, clearError } from '../../store/slices/authSlice.js';
+import { AuthField, AuthLayout, authFieldClass } from './AuthLayout.jsx';
 
 export function LoginPage() {
   const dispatch = useDispatch();
@@ -25,71 +26,77 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-65px)] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        <h1 className="text-2xl font-medium text-[#e2f0ff] mb-1">Bienvenido de nuevo</h1>
-        <p className="text-sm text-muted mb-8">Inicia sesión para competir</p>
-
-        <div className="card">
-          {successMessage && (
-            <div className="mb-5 px-3 py-2.5 bg-green-400/10 border border-green-400/20 rounded-md text-green-400 text-sm">
-              {successMessage}
-            </div>
-          )}
-          {error && (
-            <div className="mb-5 px-3 py-2.5 bg-red-400/10 border border-red-400/20 rounded-md text-red-400 text-sm">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit}>
-            <label className="form-label" htmlFor="login-email">Email</label>
-            <input
-              id="login-email"
-              name="email"
-              className="form-input"
-              type="email"
-              placeholder="tu@email.com"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              required
-              autoComplete="email"
-            />
-
-            <label className="form-label" htmlFor="login-password">Contraseña</label>
-            <input
-              id="login-password"
-              name="password"
-              className="form-input"
-              type="password"
-              placeholder="••••••••"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              required
-              autoComplete="current-password"
-            />
-
-            <button className="btn-primary" type="submit" disabled={loading}>
-              {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-            </button>
-          </form>
-
-          <div className="flex items-center gap-3 my-5">
-            <hr className="flex-1 border-border" />
-            <span className="text-xs text-muted">o</span>
-            <hr className="flex-1 border-border" />
-          </div>
-
-          <Link to="/register?wca=1">
-            <button className="btn-secondary">🏆 &nbsp;Entrar con WCA ID</button>
-          </Link>
-
-          <div className="flex justify-between items-center mt-5 text-sm text-muted">
-            <span>¿Primera vez? <Link to="/register" className="text-accent hover:text-cyan-300 transition-colors">Crear cuenta</Link></span>
-            <Link to="/forgot-password" className="text-accent hover:text-cyan-300 transition-colors text-xs">Olvidé mi contraseña</Link>
-          </div>
+    <AuthLayout
+      title="Bienvenido de nuevo"
+      subtitle="Entra para competir, revisar ranking y mantener tu perfil al día."
+      sideTitle="Compite con contexto."
+      sideText="Accede a salas 1v1, rankings separados por cubo y perfiles vinculados con WCA."
+      sideCode="3x3"
+      sideStats={[
+        { label: 'Elo', value: '1216', tone: 'text-amber-300' },
+        { label: 'PB', value: '10.92', tone: 'text-green-400' },
+        { label: 'Online', value: '2', tone: 'text-accent' },
+      ]}
+    >
+      {successMessage && (
+        <div className="mb-5 rounded-md border border-green-400/20 bg-green-400/10 px-3 py-2.5 text-sm text-green-400">
+          {successMessage}
         </div>
+      )}
+      {error && (
+        <div className="mb-5 rounded-md border border-red-400/20 bg-red-400/10 px-3 py-2.5 text-sm text-red-400">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit}>
+        <AuthField label="Email" htmlFor="login-email">
+          <input
+            id="login-email"
+            name="email"
+            className={authFieldClass}
+            type="email"
+            placeholder="tu@email.com"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            required
+            autoComplete="email"
+          />
+        </AuthField>
+
+        <AuthField label="Contraseña" htmlFor="login-password">
+          <input
+            id="login-password"
+            name="password"
+            className={authFieldClass}
+            type="password"
+            placeholder="••••••••"
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            required
+            autoComplete="current-password"
+          />
+        </AuthField>
+
+        <button className="btn-primary" type="submit" disabled={loading}>
+          {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+        </button>
+      </form>
+
+      <div className="my-5 flex items-center gap-3">
+        <hr className="flex-1 border-border" />
+        <span className="text-xs text-muted">o</span>
+        <hr className="flex-1 border-border" />
       </div>
-    </div>
+
+      <Link to="/register?wca=1">
+        <button className="btn-secondary">Entrar con WCA ID</button>
+      </Link>
+
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm text-muted">
+        <span>¿Primera vez? <Link to="/register" className="text-accent transition-colors hover:text-cyan-300">Crear cuenta</Link></span>
+        <Link to="/forgot-password" className="text-xs text-accent transition-colors hover:text-cyan-300">Olvidé mi contraseña</Link>
+      </div>
+    </AuthLayout>
   );
 }
