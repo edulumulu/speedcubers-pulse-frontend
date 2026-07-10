@@ -3,7 +3,17 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchRanking, setEvent } from '../../store/slices/rankingSlice.js';
 import { RankingTable } from './RankingTable.jsx';
 
-const EVENTS = ['3x3', '2x2', '4x4', '5x5', '6x6', '7x7', '3x3oh', 'mega', 'pyra', 'skewb', 'sq1', 'clock'];
+const EVENTS = [
+  { value: '3x3', label: '3x3' },
+  { value: '2x2', label: '2x2' },
+  { value: '4x4', label: '4x4' },
+  { value: '5x5', label: '5x5' },
+  { value: '6x6', label: '6x6' },
+  { value: '7x7', label: '7x7' },
+  { value: 'oh', label: '3x3 OH' },
+  { value: 'pyraminx', label: 'Pyraminx' },
+  { value: 'skewb', label: 'Skewb' },
+];
 
 export function RankingPage() {
   const dispatch = useDispatch();
@@ -33,16 +43,16 @@ export function RankingPage() {
           <div className="flex flex-wrap gap-2">
             {EVENTS.map((e) => (
               <button
-                key={e}
-                onClick={() => handleEventChange(e)}
-                aria-pressed={event === e}
+                key={e.value}
+                onClick={() => handleEventChange(e.value)}
+                aria-pressed={event === e.value}
                 className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                  event === e
+                  event === e.value
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-accent text-muted hover:text-foreground'
                 }`}
               >
-                {e}
+                {e.label}
               </button>
             ))}
           </div>
