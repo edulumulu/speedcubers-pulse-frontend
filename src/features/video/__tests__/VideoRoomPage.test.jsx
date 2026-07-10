@@ -166,10 +166,10 @@ describe('VideoRoomPage', () => {
     expect(screen.getByLabelText(/cubo/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/código de sala/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /unirse con código/i })).toBeInTheDocument();
-    expect(screen.getByText('Esperando sala de competencia')).toBeInTheDocument();
+    expect(screen.getByText('Sin sala activa')).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Tu cámara' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Rival' })).toBeInTheDocument();
-    expect(screen.getByText('Crea una sala o únete con un código.')).toBeInTheDocument();
+    expect(screen.getByText('Listo para empezar.')).toBeInTheDocument();
     expect(screen.queryByText(/timer local/i)).not.toBeInTheDocument();
   });
 
@@ -187,10 +187,10 @@ describe('VideoRoomPage', () => {
       expect(videoService.requestToken).toHaveBeenCalledWith({ channelName: 'match-test' });
     });
     expect(await screen.findByTestId('room-code')).toHaveTextContent('ABC123');
-    expect(screen.getByText('Cámara y micrófono conectados a la sala.')).toBeInTheDocument();
+    expect(screen.getByText('Video preparado.')).toBeInTheDocument();
     expect(screen.getByText('En directo')).toBeInTheDocument();
-    expect(screen.getByText('match-test')).toBeInTheDocument();
-    expect(screen.getByText('42')).toBeInTheDocument();
+    expect(screen.getByTestId('room-channel')).toHaveTextContent('match-test');
+    expect(screen.getByTestId('room-uid')).toHaveTextContent('42');
     expect(screen.getByRole('button', { name: /salir de la sala/i })).toBeInTheDocument();
     expect(store.getState().competition).toEqual({
       room: waitingCompetitionRoom,
@@ -272,7 +272,7 @@ describe('VideoRoomPage', () => {
     await user.click(screen.getByRole('button', { name: /salir de la sala/i }));
 
     expect(leaveRtcRoom).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('Esperando sala de competencia')).toBeInTheDocument();
+    expect(screen.getByText('Sin sala activa')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /salir de la sala/i })).not.toBeInTheDocument();
     expect(store.getState().competition).toEqual({
       room: null,
@@ -331,7 +331,7 @@ describe('VideoRoomPage', () => {
     await user.click(screen.getByRole('button', { name: /crear sala/i }));
 
     expect(await screen.findByText('No se pudo crear la sala')).toBeInTheDocument();
-    expect(screen.getByText('Esperando sala de competencia')).toBeInTheDocument();
+    expect(screen.getByText('Sin sala activa')).toBeInTheDocument();
     expect(videoService.requestToken).not.toHaveBeenCalled();
     expect(store.getState().competition).toEqual({
       room: null,

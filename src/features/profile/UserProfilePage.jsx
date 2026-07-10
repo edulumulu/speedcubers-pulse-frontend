@@ -16,13 +16,13 @@ export function UserProfilePage() {
   }, [dispatch, username]);
 
   return (
-    <main className="max-w-lg mx-auto px-4 py-10">
+    <main className="mx-auto min-h-[calc(100vh-65px)] w-full max-w-7xl px-4 py-6">
       {loading && !profile && (
-        <p className="text-muted text-sm">Cargando perfil...</p>
+        <div className="rounded-lg border border-border bg-surface p-4 text-sm text-muted">Cargando perfil...</div>
       )}
 
       {error && !profile && (
-        <p className="text-sm text-red-400">{error}</p>
+        <div className="rounded-lg border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-300">{error}</div>
       )}
 
       {profile && <ProfileCard profile={profile} />}

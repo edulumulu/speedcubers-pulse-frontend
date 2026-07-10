@@ -46,10 +46,10 @@ function roundNumber(round) {
 }
 
 function roomStatusCopy({ isConnectedRtc, isJoiningRtc, isReady }) {
-  if (isConnectedRtc) return 'Cámara y micrófono conectados a la sala.';
-  if (isJoiningRtc) return 'Pidiendo permisos y entrando a la sala.';
-  if (isReady) return 'La cámara está lista para competir.';
-  return 'Crea una sala o únete con un código.';
+  if (isConnectedRtc) return 'Video preparado.';
+  if (isJoiningRtc) return 'Conectando video.';
+  if (isReady) return 'Listo para competir.';
+  return 'Listo para empezar.';
 }
 
 function scorePlayerInitial(username, fallback) {
@@ -388,21 +388,31 @@ export function VideoRoomPage() {
         </div>
       )}
       <div className="flex flex-col gap-6">
-        <header className="border-b border-border/50 pb-4">
-          <p className="text-xs font-mono uppercase text-accent tracking-widest">Competición 1v1</p>
-          <h1 className="text-2xl font-bold mt-1">Sala de competición</h1>
-          <p className="text-sm text-muted mt-1">Crea una sala privada, comparte el código y resuelve rondas contra otro cuber.</p>
+        <header className="flex flex-col gap-3 border-b border-border/50 pb-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-mono uppercase text-accent tracking-widest">Competición 1v1</p>
+            <h1 className="mt-2 text-4xl font-extrabold leading-none text-[#e2f0ff] sm:text-5xl">Sala de competición</h1>
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted">Crea o únete a una sala 1v1.</p>
+          </div>
+          <div className="flex flex-wrap gap-2 text-xs">
+            <span className="rounded-md border border-border bg-surface px-3 py-2 text-muted">Sala privada</span>
+            <span className="rounded-md border border-border bg-surface px-3 py-2 text-muted">Video RTC</span>
+            <span className="rounded-md border border-border bg-surface px-3 py-2 text-muted">Timer 1v1</span>
+          </div>
         </header>
 
         {!isCompetitionActive && (
-          <section className="grid lg:grid-cols-[320px_1fr] gap-5 items-start">
-            <div className="card">
-              <div className="mb-5">
-                <p className="form-label mb-2">Crear sala</p>
-                <label className="form-label" htmlFor="initial-event">Cubo</label>
+          <section className="grid gap-5 lg:grid-cols-[390px_minmax(0,1fr)] lg:items-start">
+            <aside className="grid gap-4">
+              <div className="rounded-lg border border-border bg-surface p-4">
+                <div className="mb-4">
+                  <h2 className="text-lg font-bold text-[#e2f0ff]">Crear sala</h2>
+                  <p className="mt-1 text-sm text-muted">Elige cubo inicial.</p>
+                </div>
+                <label className="form-label mb-2 text-[#bdd3e8]" htmlFor="initial-event">Cubo</label>
                 <select
                   id="initial-event"
-                  className="form-input"
+                  className="form-input mb-4 min-h-[52px] rounded-[10px] border-[#1b3c57] bg-[#0d1a26] text-[15px] focus:border-accent focus:bg-[#102133] focus:ring-2 focus:ring-accent/20"
                   value={selectedEvent}
                   onChange={(event) => setSelectedEvent(event.target.value)}
                   disabled={controlsDisabled}
@@ -427,14 +437,13 @@ export function VideoRoomPage() {
                       ? 'Conectando video...'
                       : 'Crear sala'}
                 </button>
-              </div>
 
-              <div className="border-t border-border pt-5">
+                <div className="my-5 border-t border-border" />
                 <form onSubmit={handleJoinRoom}>
-                  <label className="form-label" htmlFor="roomCode">Código de sala</label>
+                  <label className="form-label mb-2 text-[#bdd3e8]" htmlFor="roomCode">Código de sala</label>
                   <input
                     id="roomCode"
-                    className="form-input uppercase"
+                    className="form-input mb-4 min-h-[52px] rounded-[10px] border-[#1b3c57] bg-[#0d1a26] text-[15px] uppercase placeholder:text-[#8aa2ba] focus:border-accent focus:bg-[#102133] focus:ring-2 focus:ring-accent/20"
                     value={joinCode}
                     onChange={(e) => setJoinCode(e.target.value)}
                     placeholder="ABC123"
@@ -455,29 +464,65 @@ export function VideoRoomPage() {
                         : 'Unirse con código'}
                   </button>
                 </form>
+
+                {visibleError && (
+                  <div
+                    className="mt-5 px-3 py-2.5 bg-red-400/10 border border-red-400/20 rounded-md text-red-400 text-sm"
+                    role="alert"
+                  >
+                    {visibleError}
+                  </div>
+                )}
+
+                {hasCompetitionRoom && (
+                  <button className="btn-secondary mt-3" type="button" onClick={handleLeave} data-testid="leave-room-button">
+                    Salir de la sala
+                  </button>
+                )}
               </div>
 
-              {visibleError && (
-                <div
-                  className="mt-5 px-3 py-2.5 bg-red-400/10 border border-red-400/20 rounded-md text-red-400 text-sm"
-                  role="alert"
-                >
-                  {visibleError}
+              {!hasCompetitionRoom && (
+                <div className="rounded-lg border border-border bg-[#07101a] p-4">
+                  <h3 className="mb-3 text-sm font-semibold text-[#e2f0ff]">Resumen</h3>
+                  <div className="grid gap-3 text-sm text-muted">
+                    <div className="grid grid-cols-[28px_minmax(0,1fr)] items-start gap-3">
+                      <span className="grid h-7 w-7 place-items-center rounded-full border border-border text-xs font-semibold text-[#e2f0ff]">1</span>
+                      <span>Crea una sala o entra con código.</span>
+                    </div>
+                    <div className="grid grid-cols-[28px_minmax(0,1fr)] items-start gap-3">
+                      <span className="grid h-7 w-7 place-items-center rounded-full border border-border text-xs font-semibold text-[#e2f0ff]">2</span>
+                      <span>La cámara queda preparada mientras esperas rival.</span>
+                    </div>
+                    <div className="grid grid-cols-[28px_minmax(0,1fr)] items-start gap-3">
+                      <span className="grid h-7 w-7 place-items-center rounded-full border border-border text-xs font-semibold text-[#e2f0ff]">3</span>
+                      <span>Al unirse ambos, empieza la competición.</span>
+                    </div>
+                  </div>
                 </div>
               )}
 
               {hasCompetitionRoom && (
-                <button className="btn-secondary mt-3" type="button" onClick={handleLeave} data-testid="leave-room-button">
-                Salir de la sala
-                </button>
+                <div className="rounded-lg border border-border bg-[#07101a] p-4">
+                  <h3 className="mb-3 text-sm font-semibold text-[#e2f0ff]">Datos técnicos</h3>
+                  <dl className="grid gap-3">
+                    <div className="rounded-md border border-border bg-surface p-3">
+                      <dt className="text-xs text-muted">Canal</dt>
+                      <dd className="mt-2 font-mono text-sm text-[#e2f0ff]">{room?.channelName ? 'Disponible' : 'Sin canal'}</dd>
+                    </div>
+                    <div className="rounded-md border border-border bg-surface p-3">
+                      <dt className="text-xs text-muted">UID</dt>
+                      <dd className="mt-2 font-mono text-sm text-[#e2f0ff]">{room?.uid ? 'Asignado' : 'auto'}</dd>
+                    </div>
+                  </dl>
+                </div>
               )}
-            </div>
+            </aside>
 
-            <div className="border border-border bg-surface rounded-lg overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-b border-border">
+            <div className="overflow-hidden rounded-lg border border-border bg-surface">
+              <div className="flex flex-col gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-base font-semibold" data-testid="room-title">
-                    {roomCode ? `Sala ${roomCode}` : 'Esperando sala de competencia'}
+                    {roomCode ? `Sala ${roomCode}` : 'Sin sala activa'}
                   </h2>
                   <p className="text-xs text-muted">{roomStatusCopy({ isConnectedRtc, isJoiningRtc, isReady })}</p>
                 </div>
@@ -486,9 +531,9 @@ export function VideoRoomPage() {
                 </span>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-3 p-4">
+              <div className="grid gap-3 p-4 md:grid-cols-2">
                 <section
-                  className="aspect-video rounded-md border border-border-light bg-bg overflow-hidden relative"
+                  className="relative min-h-[210px] overflow-hidden rounded-md border border-border-light bg-[radial-gradient(circle_at_50%_38%,rgba(34,211,238,0.14),transparent_28%),linear-gradient(145deg,#0b1722,#04080d_68%)] md:aspect-video"
                   aria-labelledby="local-video-title"
                   role="group"
                 >
@@ -499,7 +544,7 @@ export function VideoRoomPage() {
                       <div className="text-center px-4">
                         <p className="text-sm font-medium text-[#e2f0ff]">Tu cámara</p>
                         <p className="text-xs text-muted mt-1">
-                          {isJoiningRtc ? 'Activando cámara y micrófono.' : 'Se activará al entrar en la sala.'}
+                          {isJoiningRtc ? 'Activando cámara.' : 'Cámara inactiva.'}
                         </p>
                       </div>
                     </div>
@@ -509,7 +554,7 @@ export function VideoRoomPage() {
                   )}
                 </section>
                 <section
-                  className="aspect-video rounded-md border border-border-light bg-bg overflow-hidden relative"
+                  className="relative min-h-[210px] overflow-hidden rounded-md border border-border-light bg-[radial-gradient(circle_at_50%_35%,rgba(52,211,153,0.13),transparent_28%),linear-gradient(145deg,#0b1722,#04080d_68%)] md:aspect-video"
                   aria-labelledby="remote-video-title"
                   role="group"
                 >
@@ -528,7 +573,7 @@ export function VideoRoomPage() {
                       <div className="text-center px-4">
                         <p className="text-sm font-medium text-[#e2f0ff]">Rival</p>
                         <p className="text-xs text-muted mt-1">
-                          {isConnectedRtc ? 'Esperando a que el otro cuber se una.' : 'Aún no hay sala activa.'}
+                          {isConnectedRtc ? 'Esperando rival.' : 'Sin rival.'}
                         </p>
                       </div>
                     </div>
@@ -537,7 +582,7 @@ export function VideoRoomPage() {
               </div>
 
               {isReady && (
-                <dl className="grid sm:grid-cols-[1.25fr_1fr_0.7fr] gap-3 px-4 pb-4 text-sm">
+                <dl className="grid gap-3 px-4 pb-4 text-sm sm:grid-cols-[1.25fr_1fr_0.7fr]">
                   <div className="border border-accent/25 bg-accent/5 rounded-md p-3">
                     <dt className="text-xs text-muted">Código de sala</dt>
                     <dd className="mt-1 font-mono text-xl text-[#e2f0ff] break-all" data-testid="room-code">{roomCode || 'Sin código'}</dd>
