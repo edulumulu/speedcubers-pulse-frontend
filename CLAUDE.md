@@ -2,7 +2,7 @@
 
 Red social para speedcubers españoles: competencias 1v1 en tiempo real con videoconferencia, rankings y presencia online. Proyecto de Fin de Master — MVP en 8 semanas.
 
-**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B, 6, 7A, 7B-1, 7B-2, 7B-3, 7C-1, 7C-2A, 7C-2B, 7D-1, 7D-2, 7E-1 y 7E-2 completadas. Siguiente foco: ranking por evento, performance, seguridad, pulido UI y preparación de deployment.
+**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B, 6, 7A, 7B-1, 7B-2, 7B-3, 7C-1, 7C-2A, 7C-2B, 7D-1, 7D-2, 7E-1, 7E-2 y 7E-3 completadas. Siguiente foco: performance, seguridad, pulido UI y preparación de deployment.
 
 ## Arquitectura
 
@@ -162,6 +162,7 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 - Ordenar por **Elo** (descendente). Mostrar: posición, username, Elo, wins, losses, DNF count, PB, average time.
 - Si el usuario tiene WCA ID vinculado: mostrar su ranking WCA oficial en la categoría del filtro activo. El backend lo devuelve ya resuelto (WCA API + Redis cache 24h).
 - Filtro por evento (por defecto 3x3). El cambio de filtro hace un nuevo fetch al backend.
+- Eventos visibles alineados con competición: `2x2`, `3x3`, `4x4`, `5x5`, `6x6`, `7x7`, `oh`, `pyraminx`, `skewb`. Un evento sin partidas puede mostrar estado vacío.
 
 ## Fases del MVP
 
@@ -186,6 +187,7 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 | 7D-2 | API docs/OpenAPI de contratos backend actuales | ✅ |
 | 7E-1 | Selector de cubo por ronda dentro de sala activa | ✅ |
 | 7E-2 | Scrambles por evento visibles en pantalla de mezcla | ✅ |
+| 7E-3 | Ranking público con filtros alineados a eventos de competición | ✅ |
 | 7 | Integración, e2e, polish | — |
 | 8 | Deployment (Railway/Vercel) | — |
 
