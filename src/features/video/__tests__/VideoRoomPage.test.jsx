@@ -306,19 +306,17 @@ describe('VideoRoomPage', () => {
     expect(bindRemoteVideo).toHaveBeenCalledWith(7, expect.any(HTMLDivElement));
   });
 
-  it('shows the persistent match score in the active room header', () => {
+  it('shows the persistent match score and event icon in the active room video stage', () => {
     renderVideoRoom({
       preloadedCompetition: readyCompetitionState,
       preloadedVideo: { room: readyRoom, status: 'ready', error: null },
     });
 
     const score = screen.getByTestId('persistent-match-score');
-    expect(screen.getByTestId('active-event-label')).toHaveTextContent('3x3');
+    expect(screen.getByTestId('active-event-icon')).toHaveAccessibleName('Cubo actual: 3x3');
     expect(score).toHaveAccessibleName('Marcador de la sala: tú 2, rival 1');
     expect(score).toHaveTextContent('2');
     expect(score).toHaveTextContent('1');
-    expect(score).toHaveTextContent('Tú');
-    expect(score).toHaveTextContent('rival');
   });
 
   it('shows competition errors when create or join fails', async () => {
