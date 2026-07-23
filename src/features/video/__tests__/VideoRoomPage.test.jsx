@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
@@ -70,6 +70,12 @@ const readyRoom = {
     usedSeconds: 0,
     remainingSeconds: 3600,
     resetAt: '2026-07-01T00:00:00.000Z',
+    global: {
+      limitSeconds: 480000,
+      usedSeconds: 0,
+      remainingSeconds: 480000,
+      resetAt: '2026-07-01T00:00:00.000Z',
+    },
   },
 };
 
@@ -150,6 +156,12 @@ describe('VideoRoomPage', () => {
       usedSeconds: 0,
       remainingSeconds: 3600,
       resetAt: '2026-07-01T00:00:00.000Z',
+      global: {
+        limitSeconds: 480000,
+        usedSeconds: 0,
+        remainingSeconds: 480000,
+        resetAt: '2026-07-01T00:00:00.000Z',
+      },
     });
     mockAgoraRoomState();
     useAgoraRoom.mockImplementation(() => agoraRoomState);
@@ -358,6 +370,54 @@ describe('VideoRoomPage', () => {
 
     expect(await screen.findByRole('alertdialog', { name: /límite de video alcanzado/i })).toBeInTheDocument();
     expect(screen.getByText('Se ha agotado tu prueba gratuita mensual')).toBeInTheDocument();
+  });
+
+  it('shows the video quota dialog when the global free quota is exhausted', async () => {
+    competitionService.createRoom.mockResolvedValueOnce(waitingCompetitionRoom);
+    videoService.requestToken.mockRejectedValueOnce({
+      response: {
+        data: {
+          error: 'El cupo gratuito mensual de vídeo se ha agotado temporalmente',
+          code: 'VIDEO_GLOBAL_QUOTA_EXCEEDED',
+        },
+      },
+    });
+
+    const { user } = renderVideoRoom();
+
+    await user.click(screen.getByRole('button', { name: /crear sala/i }));
+
+    expect(await screen.findByRole('alertdialog', { name: /límite de video alcanzado/i })).toBeInTheDocument();
+    expect(screen.getByText('El cupo gratuito mensual de vídeo se ha agotado temporalmente')).toBeInTheDocument();
+  });
+
+  it('disconnects video when reported usage exhausts the global quota', async () => {
+    vi.useFakeTimers();
+    mockAgoraRoomState({ rtcStatus: 'connected' });
+    videoService.reportUsage.mockResolvedValueOnce({
+      limitSeconds: 3600,
+      usedSeconds: 30,
+      remainingSeconds: 3570,
+      resetAt: '2026-07-01T00:00:00.000Z',
+      global: {
+        limitSeconds: 480000,
+        usedSeconds: 480000,
+        remainingSeconds: 0,
+        resetAt: '2026-07-01T00:00:00.000Z',
+      },
+    });
+
+    renderVideoRoom({
+      preloadedCompetition: readyCompetitionState,
+      preloadedVideo: { room: readyRoom, status: 'ready', error: null },
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30000);
+    });
+
+    expect(screen.getByRole('alertdialog', { name: /límite de video alcanzado/i })).toBeInTheDocument();
+    expect(screen.getByText('El cupo gratuito mensual de vídeo se ha agotado temporalmente')).toBeInTheDocument();
   });
 
   it('submits a DNF result from an active competition room', async () => {

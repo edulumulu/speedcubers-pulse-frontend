@@ -29,6 +29,7 @@ import { videoService } from '../../services/videoService.js';
 import { EventIcon } from '../../components/EventIcon.jsx';
 
 const VIDEO_QUOTA_EXHAUSTED_MESSAGE = 'Se ha agotado tu prueba gratuita mensual';
+const VIDEO_GLOBAL_QUOTA_EXHAUSTED_MESSAGE = 'El cupo gratuito mensual de vídeo se ha agotado temporalmente';
 const VIDEO_USAGE_REPORT_INTERVAL_MS = 30000;
 const EVENT_OPTIONS = [
   { value: '3x3', label: '3x3' },
@@ -63,6 +64,18 @@ function resolveScorePlayers(matchScore, currentUser) {
     rivalScore: rivalPlayer?.score ?? 0,
     rivalUsername: rivalPlayer?.username ?? 'Rival',
   };
+}
+
+function exhaustedQuotaMessage(quota) {
+  if (quota?.global?.remainingSeconds <= 0) return VIDEO_GLOBAL_QUOTA_EXHAUSTED_MESSAGE;
+  if (quota?.remainingSeconds <= 0) return VIDEO_QUOTA_EXHAUSTED_MESSAGE;
+  return null;
+}
+
+function quotaRemainingSeconds(quota) {
+  const userRemaining = quota?.remainingSeconds ?? Number.POSITIVE_INFINITY;
+  const globalRemaining = quota?.global?.remainingSeconds ?? Number.POSITIVE_INFINITY;
+  return Math.min(userRemaining, globalRemaining);
 }
 
 export function VideoRoomPage() {
@@ -142,8 +155,9 @@ export function VideoRoomPage() {
 
     try {
       const quota = await videoService.reportUsage({ seconds });
-      if (quota?.remainingSeconds <= 0) {
-        setQuotaExpiredMessage(VIDEO_QUOTA_EXHAUSTED_MESSAGE);
+      const quotaMessage = exhaustedQuotaMessage(quota);
+      if (quotaMessage) {
+        setQuotaExpiredMessage(quotaMessage);
       }
     } catch {
       videoUsageRef.current = {
@@ -159,12 +173,12 @@ export function VideoRoomPage() {
       ...videoUsageRef.current,
       expired: true,
     };
-    setQuotaExpiredMessage(VIDEO_QUOTA_EXHAUSTED_MESSAGE);
+    setQuotaExpiredMessage(exhaustedQuotaMessage(room?.quota) ?? VIDEO_QUOTA_EXHAUSTED_MESSAGE);
     await reportCurrentVideoUsage();
     await leaveRtcRoom();
     dispatch(leaveVideoRoom());
     dispatch(leaveCompetitionRoom());
-  }, [dispatch, leaveRtcRoom, reportCurrentVideoUsage]);
+  }, [dispatch, leaveRtcRoom, reportCurrentVideoUsage, room?.quota]);
 
   useEffect(() => {
     if (!room) return;
@@ -177,15 +191,15 @@ export function VideoRoomPage() {
   }, [room]);
 
   useEffect(() => {
-    if (error === VIDEO_QUOTA_EXHAUSTED_MESSAGE) {
-      setQuotaExpiredMessage(VIDEO_QUOTA_EXHAUSTED_MESSAGE);
+    if (error === VIDEO_QUOTA_EXHAUSTED_MESSAGE || error === VIDEO_GLOBAL_QUOTA_EXHAUSTED_MESSAGE) {
+      setQuotaExpiredMessage(error);
     }
   }, [error]);
 
   useEffect(() => {
     if (!room?.quota || rtcStatus !== 'connected') return undefined;
 
-    const remainingMs = Math.max(0, room.quota.remainingSeconds ?? 0) * 1000;
+    const remainingMs = Math.max(0, quotaRemainingSeconds(room.quota)) * 1000;
     const intervalId = window.setInterval(() => {
       reportCurrentVideoUsage();
     }, VIDEO_USAGE_REPORT_INTERVAL_MS);
