@@ -10,6 +10,8 @@ const EVENT_LABELS = {
   oh: '3x3 OH',
   pyraminx: 'Pyraminx',
   skewb: 'Skewb',
+  megaminx: 'Megaminx',
+  fto: 'FTO',
 };
 
 function fmt(s) {

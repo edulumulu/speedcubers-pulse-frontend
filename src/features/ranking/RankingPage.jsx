@@ -15,6 +15,8 @@ const EVENTS = [
   { value: 'oh', label: '3x3 OH', shortLabel: 'OH' },
   { value: 'pyraminx', label: 'Pyraminx', shortLabel: 'Pyra' },
   { value: 'skewb', label: 'Skewb', shortLabel: 'Skewb' },
+  { value: 'megaminx', label: 'Megaminx', shortLabel: 'Mega' },
+  { value: 'fto', label: 'FTO', shortLabel: 'FTO' },
 ];
 
 function formatTime(value) {
