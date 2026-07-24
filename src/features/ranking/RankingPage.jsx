@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectUser } from '../../store/slices/authSlice.js';
 import { fetchRanking, setEvent } from '../../store/slices/rankingSlice.js';
+import { EventIcon } from '../../components/EventIcon.jsx';
 import { RankingTable } from './RankingTable.jsx';
 
 const EVENTS = [
@@ -113,14 +114,17 @@ export function RankingPage() {
                 key={item.value}
                 onClick={() => handleEventChange(item.value)}
                 aria-pressed={event === item.value}
-                className={`min-w-[4.25rem] rounded-md border px-3 py-2 text-center transition-colors ${
+                className={`grid min-w-[4.5rem] justify-items-center gap-1 rounded-md border px-3 py-2 text-center transition-colors ${
                   event === item.value
-                    ? 'border-accent/70 bg-accent/10 text-[#e2f0ff]'
+                    ? 'border-accent/70 bg-accent/10 text-accent'
                     : 'border-border bg-bg text-muted hover:border-border-light hover:text-[#e2f0ff]'
                 }`}
               >
-                <strong className="block text-sm leading-none">{item.shortLabel}</strong>
-                <span className="mt-1 block text-[0.66rem] text-muted">{item.label}</span>
+                <span className="h-8 w-8 text-[2rem]">
+                  <EventIcon event={item.value} />
+                </span>
+                <strong className="block text-[0.68rem] leading-none">{item.shortLabel}</strong>
+                <span className="block text-[0.58rem] text-muted">{item.label}</span>
               </button>
             ))}
           </div>

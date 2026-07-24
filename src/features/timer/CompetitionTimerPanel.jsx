@@ -563,7 +563,7 @@ export function CompetitionTimerPanel({
                       aria-pressed={isSelected}
                       data-testid={`round-event-option-${option.value}`}
                     >
-                      <span className="h-9 w-9">
+                      <span className="h-9 w-9 text-4xl">
                         <EventIcon event={option.value} />
                       </span>
                       <span className="mt-1 text-xs font-semibold">{option.label}</span>
