@@ -2,7 +2,7 @@
 
 Red social para speedcubers españoles: competencias 1v1 en tiempo real con videoconferencia, rankings y presencia online. Proyecto de Fin de Master — MVP en 8 semanas.
 
-**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B, 6, 7A, 7B-1, 7B-2, 7B-3, 7C-1, 7C-2A, 7C-2B, 7D-1, 7D-2, 7D-3, 7E-1, 7E-2, 7E-3, 7F-1, 7F-2 y 8A completadas. Siguiente foco: infraestructura sin publicar y preparación operativa.
+**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B, 6, 7A, 7B-1, 7B-2, 7B-3, 7C-1, 7C-2A, 7C-2B, 7D-1, 7D-2, 7D-3, 7E-1, 7E-2, 7E-3, 7F-1, 7F-2, 8A y 8B-1 completadas. Siguiente foco: desplegar/validar develop y preparar operación básica.
 
 ## Arquitectura
 
@@ -111,6 +111,11 @@ Variables críticas:
 
 **Nunca incluir `VITE_AGORA_APP_CERTIFICATE`, `VITE_STRIPE_SECRET_KEY`, certificados, private keys, webhook secrets ni ningún secreto en el frontend.**
 
+Entornos documentados:
+- `.env.example` — local.
+- `.env.develop.example` — staging/demo en Vercel Hobby apuntando a Railway Free.
+- `.env.production.example` — producción futura con dominio real.
+
 ## Comandos útiles
 
 ```bash
@@ -143,6 +148,7 @@ npm run lint:fix     # Auto-fix
 - **Playwright auth/session E2E** (`e2e/flows/auth-session.spec.js`): registra un usuario único, valida sesión tras recarga por `POST /auth/refresh`, confirma que no hay tokens en `localStorage`/`sessionStorage`, prueba logout, redirección protegida y login posterior.
 - **Playwright ranking/profile E2E** (`e2e/flows/ranking-profile.spec.js`): valida ranking público, filtro de evento `2x2`, enlace a perfil público y ausencia de email privado.
 - **Playwright competition 1v1 E2E** (`e2e/flows/competition-1v1.spec.js`): registra dos usuarios únicos, crea sala, une rival por código, usa RTC fake solo en E2E, envía resultados de ambos participantes y valida resolución de ronda y apertura de ronda 2.
+- **Vercel staging/demo** (`vercel.json`): configura build Vite (`npm run build`), salida `dist` y rewrite SPA hacia `index.html` para rutas React Router.
 
 ## Antes de hacer push
 
@@ -194,6 +200,7 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 | 7F-1 | Pulido UI guiado de ranking, perfil, auth y lobby de competición | ✅ |
 | 7F-2 | Pulido UI guiado de sala activa con overlays e iconos de cubo | ✅ |
 | 8A | Hardening de seguridad pre-producción: guard anti-secretos `VITE_*` | ✅ |
+| 8B-1 | Configuración frontend para staging/demo Vercel Hobby | ✅ |
 | 7 | Integración, e2e, polish | — |
 | 8 | Deployment (Railway/Vercel) | — |
 
