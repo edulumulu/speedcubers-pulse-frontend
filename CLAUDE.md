@@ -2,7 +2,7 @@
 
 Red social para speedcubers españoles: competencias 1v1 en tiempo real con videoconferencia, rankings y presencia online. Proyecto de Fin de Master — MVP en 8 semanas.
 
-**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B, 6, 7A, 7B-1, 7B-2, 7B-3, 7C-1, 7C-2A, 7C-2B, 7D-1, 7D-2, 7D-3, 7E-1, 7E-2, 7E-3, 7F-1 y 7F-2 completadas. Siguiente foco: performance, seguridad y preparación de deployment.
+**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B, 6, 7A, 7B-1, 7B-2, 7B-3, 7C-1, 7C-2A, 7C-2B, 7D-1, 7D-2, 7D-3, 7E-1, 7E-2, 7E-3, 7F-1, 7F-2 y 8A completadas. Siguiente foco: infraestructura sin publicar y preparación operativa.
 
 ## Arquitectura
 
@@ -98,6 +98,7 @@ Targets:
 - No mostrar información sensible de otros usuarios sin que el backend lo autorice
 - Validar inputs en cliente antes de enviar (UX), pero confiar en la validación del backend para seguridad
 - No exponer claves de Agora.io en el bundle — el backend genera los tokens RTC
+- `assertNoFrontendSecrets(import.meta.env)` bloquea el arranque si aparece una variable `VITE_*` con nombre de secreto, certificado, private key o webhook
 
 ## Variables de entorno (Vite)
 
@@ -108,7 +109,7 @@ Variables críticas:
 - `VITE_SOCKET_URL` — URL del servidor Socket.io
 - `VITE_AGORA_APP_ID` — App ID de Agora (público, no secret)
 
-**Nunca incluir `VITE_AGORA_APP_CERTIFICATE` ni ningún secreto en el frontend.**
+**Nunca incluir `VITE_AGORA_APP_CERTIFICATE`, `VITE_STRIPE_SECRET_KEY`, certificados, private keys, webhook secrets ni ningún secreto en el frontend.**
 
 ## Comandos útiles
 
@@ -129,6 +130,7 @@ npm run lint:fix     # Auto-fix
 ## Convenciones implementadas
 
 - **`injectStore`** (`src/services/api.js`): patrón para evitar importación circular con el store. En `main.jsx` se llama `injectStore(store)` después de crear el store. El interceptor de Axios usa `_store?.getState?.()?.auth?.accessToken`.
+- **`assertNoFrontendSecrets`** (`src/services/runtimeSecurity.js`): guard de arranque que falla si una variable pública `VITE_*` parece contener secretos (`SECRET`, `CERTIFICATE`, `PRIVATE_KEY`, `WEBHOOK`). Sirve como red de seguridad antes de builds productivos.
 - **`AuthBootstrap`** (`src/features/auth/AuthBootstrap.jsx`): al arrancar la app llama a `POST /auth/refresh` con credenciales/cookie; si hay sesión recuperable restaura `user` y `accessToken` en Redux. `GuestRoute` y `ProtectedRoute` esperan `bootstrapped` antes de redirigir.
 - **`GuestRoute`** (`src/router/GuestRoute.jsx`): redirige a `/` a usuarios ya autenticados (para `/login`, `/register`, `/forgot-password`, `/reset-password`).
 - **Route coverage tests** (`src/components/__tests__/App.test.jsx`): 12 tests que verifican que todas las rutas públicas y protegidas existen. Si se pierden archivos en un merge, los tests fallan inmediatamente.
@@ -191,6 +193,7 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 | 7E-3 | Ranking público con filtros alineados a eventos de competición | ✅ |
 | 7F-1 | Pulido UI guiado de ranking, perfil, auth y lobby de competición | ✅ |
 | 7F-2 | Pulido UI guiado de sala activa con overlays e iconos de cubo | ✅ |
+| 8A | Hardening de seguridad pre-producción: guard anti-secretos `VITE_*` | ✅ |
 | 7 | Integración, e2e, polish | — |
 | 8 | Deployment (Railway/Vercel) | — |
 
