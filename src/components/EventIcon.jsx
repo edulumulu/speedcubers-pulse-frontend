@@ -90,6 +90,27 @@ function OneHandedIcon() {
   );
 }
 
+function MegaminxIcon() {
+  return (
+    <svg viewBox="0 0 500 500" aria-hidden="true" className="h-full w-full fill-current">
+      <path d="M250 34 456 184 377 427H123L44 184z" />
+      <path d="M250 115 379 209 330 361H170L121 209z" fill="currentColor" opacity=".62" />
+      <path d="M250 191 306 232 285 298H215L194 232z" fill="currentColor" opacity=".35" />
+      <path d="M250 34v81M456 184l-77 25M377 427l-47-66M123 427l47-66M44 184l77 25" stroke="currentColor" strokeWidth="18" opacity=".45" fill="none" />
+    </svg>
+  );
+}
+
+function FtoIcon() {
+  return (
+    <svg viewBox="0 0 500 500" aria-hidden="true" className="h-full w-full fill-current">
+      <path d="M250 38 458 250 250 462 42 250z" />
+      <path d="M250 38v424M42 250h416M104 187l146 63-146 63M396 187l-146 63 146 63" stroke="currentColor" strokeWidth="20" opacity=".45" fill="none" />
+      <path d="M250 118 374 250 250 382 126 250z" fill="currentColor" opacity=".42" />
+    </svg>
+  );
+}
+
 export function EventIcon({ event, className = '' }) {
   const cells = CUBE_EVENT_CELLS[event];
   if (cells) {
@@ -102,6 +123,8 @@ export function EventIcon({ event, className = '' }) {
   if (event === 'pyraminx') return <span className={`block h-full w-full ${className}`}><PyraminxIcon /></span>;
   if (event === 'skewb') return <span className={`block h-full w-full ${className}`}><SkewbIcon /></span>;
   if (event === 'oh') return <span className={`block h-full w-full ${className}`}><OneHandedIcon /></span>;
+  if (event === 'megaminx') return <span className={`block h-full w-full ${className}`}><MegaminxIcon /></span>;
+  if (event === 'fto') return <span className={`block h-full w-full ${className}`}><FtoIcon /></span>;
 
   return (
     <span className={`grid h-full w-full place-items-center font-mono text-xl font-semibold ${className}`}>

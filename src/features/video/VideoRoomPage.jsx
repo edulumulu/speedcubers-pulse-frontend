@@ -41,6 +41,8 @@ const EVENT_OPTIONS = [
   { value: 'oh', label: '3x3 OH' },
   { value: 'pyraminx', label: 'Pyraminx' },
   { value: 'skewb', label: 'Skewb' },
+  { value: 'megaminx', label: 'Megaminx' },
+  { value: 'fto', label: 'FTO' },
 ];
 
 function roundNumber(round) {

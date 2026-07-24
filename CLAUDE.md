@@ -2,7 +2,7 @@
 
 Red social para speedcubers españoles: competencias 1v1 en tiempo real con videoconferencia, rankings y presencia online. Proyecto de Fin de Master — MVP en 8 semanas.
 
-**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B, 6, 7A, 7B-1, 7B-2, 7B-3, 7C-1, 7C-2A, 7C-2B, 7D-1, 7D-2, 7D-3, 7E-1, 7E-2, 7E-3, 7F-1, 7F-2, 8A, 8B-1 y 8B-2 completadas. Siguiente foco: operación básica.
+**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B, 6, 7A, 7B-1, 7B-2, 7B-3, 7C-1, 7C-2A, 7C-2B, 7D-1, 7D-2, 7D-3, 7E-1, 7E-2, 7E-3, 7F-1, 7F-2, 8A, 8B-1, 8B-2 y 9 completadas. Siguiente foco: retos directos entre usuarios.
 
 ## Arquitectura
 
@@ -171,7 +171,7 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 - Ordenar por **Elo** (descendente). Mostrar: posición, username, Elo, wins, losses, DNF count, PB, average time.
 - Si el usuario tiene WCA ID vinculado: mostrar su ranking WCA oficial en la categoría del filtro activo. El backend lo devuelve ya resuelto (WCA API + Redis cache 24h).
 - Filtro por evento (por defecto 3x3). El cambio de filtro hace un nuevo fetch al backend.
-- Eventos visibles alineados con competición: `2x2`, `3x3`, `4x4`, `5x5`, `6x6`, `7x7`, `oh`, `pyraminx`, `skewb`. Un evento sin partidas puede mostrar estado vacío.
+- Eventos visibles alineados con competición: `2x2`, `3x3`, `4x4`, `5x5`, `6x6`, `7x7`, `oh`, `pyraminx`, `skewb`, `megaminx`, `fto`. Un evento sin partidas puede mostrar estado vacío.
 
 ## Fases del MVP
 
@@ -203,6 +203,7 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 | 8A | Hardening de seguridad pre-producción: guard anti-secretos `VITE_*` | ✅ |
 | 8B-1 | Configuración frontend para staging/demo Vercel Hobby | ✅ |
 | 8B-2 | Validación real Vercel/Railway y URLs develop | ✅ |
+| 9 | Megaminx y FTO en selector, ranking e iconos | ✅ |
 | 7 | Integración, e2e, polish | — |
 | 8 | Deployment (Railway/Vercel) | — |
 
