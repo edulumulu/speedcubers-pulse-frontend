@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
+import { EventIcon } from '../../components/EventIcon.jsx';
 
 const TICK_MS = 50;
 const INSPECTION_PLUS_TWO_MS = 15000;
@@ -96,7 +97,10 @@ export function CompetitionTimerPanel({
   activeRound = null,
   latestCompletedRound = null,
   matchScore = null,
+  event = '3x3',
+  eventOptions = [],
   currentUser = null,
+  onChangeRoundEvent = null,
   onSubmit,
   onStartInspection = null,
   inspectionStartSignal = null,
@@ -113,6 +117,7 @@ export function CompetitionTimerPanel({
   const [phase, setPhase] = useState(hasScramble ? 'scramble' : 'ready');
   const [showRoundFinal, setShowRoundFinal] = useState(false);
   const [showMatchScore, setShowMatchScore] = useState(false);
+  const [isEventSelectorExpanded, setIsEventSelectorExpanded] = useState(false);
   const [mixLockedUntilMs, setMixLockedUntilMs] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [startedAt, setStartedAt] = useState(null);
@@ -411,6 +416,7 @@ export function CompetitionTimerPanel({
   const submittedPenalty = submittedResult ? resultPenalty(submittedResult) : 'none';
   const resolution = roundResolution(submittedResult) ?? (!isWaitingForOpponent ? latestCompletedRound?.resolution : null);
   const isRoundFinal = showRoundFinal && Boolean(resolution);
+  const canChangeRoundEvent = phase === 'scramble' && !isRoundFinal && !showMatchScore && !isSubmitting && !isWaitingForOpponent;
   const scorePlayers = [matchScore?.host, matchScore?.guest].filter(Boolean);
   const ownScorePlayer = scorePlayers.find((player) => player.id && player.id === currentUser?.id) ?? matchScore?.host ?? null;
   const rivalScorePlayer = scorePlayers.find((player) => player.id !== ownScorePlayer?.id) ?? matchScore?.guest ?? null;
@@ -421,6 +427,11 @@ export function CompetitionTimerPanel({
   const finalResults = roundResolutionResults(resolution);
   const activeRoundNumber = activeRound?.number ?? null;
   const activeScramble = activeRound?.scramble ?? null;
+  const orderedEventOptions = useMemo(() => {
+    const selectedOption = eventOptions.find((option) => option.value === event);
+    const restOptions = eventOptions.filter((option) => option.value !== event);
+    return selectedOption ? [selectedOption, ...restOptions] : eventOptions;
+  }, [event, eventOptions]);
   const currentInspectionWarning = inspectionWarning(inspectionElapsedMs);
   const timerHint = hasScramble
     ? 'Barra espaciadora para inspección, inicio y parada'
@@ -514,6 +525,54 @@ export function CompetitionTimerPanel({
 
       {activeScramble && phase === 'scramble' && !isRoundFinal && !showMatchScore && (
         <div className="mt-4 rounded-md border border-accent/25 bg-accent/5 px-4 py-5 text-center">
+          {eventOptions.length > 0 && (
+            <div className="mb-5">
+              <div
+                className={`grid grid-cols-3 gap-2 overflow-hidden transition-[max-height] duration-200 sm:grid-cols-5 ${
+                  isEventSelectorExpanded ? 'max-h-44' : 'max-h-[76px]'
+                }`}
+                aria-label="Seleccionar cubo de la ronda"
+                role="group"
+                onMouseEnter={() => setIsEventSelectorExpanded(true)}
+                onMouseLeave={() => setIsEventSelectorExpanded(false)}
+                onFocus={() => setIsEventSelectorExpanded(true)}
+                onBlur={(blurEvent) => {
+                  if (!blurEvent.currentTarget.contains(blurEvent.relatedTarget)) {
+                    setIsEventSelectorExpanded(false);
+                  }
+                }}
+              >
+                {orderedEventOptions.map((option) => {
+                  const isSelected = option.value === event;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`grid min-h-[76px] place-items-center rounded-md border px-2 py-2 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                        isSelected
+                          ? 'border-accent/70 bg-accent/10 text-accent'
+                          : 'border-border-light bg-bg/70 text-[#bdd3e8] hover:border-accent/50 hover:text-accent'
+                      } disabled:cursor-not-allowed disabled:opacity-45`}
+                      onClick={(clickEvent) => {
+                        onChangeRoundEvent?.(option.value);
+                        setIsEventSelectorExpanded(false);
+                        clickEvent.currentTarget.blur();
+                      }}
+                      disabled={!canChangeRoundEvent || !onChangeRoundEvent}
+                      aria-label={`Competir con ${option.label}`}
+                      aria-pressed={isSelected}
+                      data-testid={`round-event-option-${option.value}`}
+                    >
+                      <span className="h-9 w-9 text-4xl">
+                        <EventIcon event={option.value} />
+                      </span>
+                      <span className="mt-1 text-xs font-semibold">{option.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <p className="font-mono text-xl leading-relaxed text-[#e2f0ff] break-words">{activeScramble}</p>
         </div>
       )}
@@ -694,9 +753,16 @@ CompetitionTimerPanel.propTypes = {
   activeRound: PropTypes.shape({
     id: PropTypes.string,
     number: PropTypes.number,
+    event: PropTypes.string,
     scramble: PropTypes.string,
     status: PropTypes.string,
   }),
+  event: PropTypes.string,
+  eventOptions: PropTypes.arrayOf(PropTypes.shape({
+    value: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+  })),
+  onChangeRoundEvent: PropTypes.func,
   onStartInspection: PropTypes.func,
   inspectionStartSignal: PropTypes.shape({
     roundId: PropTypes.string,

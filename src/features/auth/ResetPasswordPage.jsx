@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/authService.js';
+import { AuthField, AuthLayout, authFieldClass } from './AuthLayout.jsx';
 
 export function ResetPasswordPage() {
   const [params] = useSearchParams();
@@ -41,49 +42,67 @@ export function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="min-h-[calc(100vh-65px)] flex items-center justify-center px-4">
-        <div className="card text-center">
-          <p className="text-red-400 text-sm mb-4">Enlace de recuperación inválido.</p>
+      <AuthLayout
+        title="Nueva contraseña"
+        subtitle="El enlace de recuperación no es válido."
+        sideTitle="Solicita un nuevo enlace."
+        sideText="Los enlaces de recuperación caducan para proteger tu cuenta."
+        sideCode="!"
+        sideStats={[
+          { label: 'Estado', value: 'Inválido', tone: 'text-red-400' },
+          { label: 'Acción', value: 'Nuevo' },
+          { label: 'Login', value: 'Seguro', tone: 'text-accent' },
+        ]}
+      >
+        <div className="text-center">
+          <p className="mb-4 rounded-lg border border-red-400/20 bg-red-400/10 px-3 py-3 text-sm text-red-400">Enlace de recuperación inválido.</p>
           <Link to="/forgot-password" className="text-accent hover:text-cyan-300 text-sm">Solicitar uno nuevo</Link>
         </div>
-      </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="min-h-[calc(100vh-65px)] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        <h1 className="text-2xl font-medium text-[#e2f0ff] mb-1">Nueva contraseña</h1>
-        <p className="text-sm text-muted mb-8">Elige una contraseña segura</p>
-        <div className="card">
-          {error && <p className="text-sm text-red-400 mb-4 bg-red-400/10 border border-red-400/20 rounded px-3 py-2">{error}</p>}
-          <form onSubmit={handleSubmit}>
-            <label className="form-label">Nueva contraseña</label>
-            <input
-              className={`form-input ${fieldErrors.password ? 'border-red-500' : ''}`}
-              type="password"
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); setFieldErrors({}); }}
-              placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número"
-              required
-            />
-            {fieldErrors.password && <p className="text-xs text-red-400 -mt-3 mb-3">{fieldErrors.password}</p>}
-            <label className="form-label">Confirmar contraseña</label>
-            <input
-              className={`form-input ${fieldErrors.confirm ? 'border-red-500' : ''}`}
-              type="password"
-              value={confirm}
-              onChange={(e) => { setConfirm(e.target.value); setFieldErrors({}); }}
-              placeholder="Repite la contraseña"
-              required
-            />
-            {fieldErrors.confirm && <p className="text-xs text-red-400 -mt-3 mb-3">{fieldErrors.confirm}</p>}
-            <button className="btn-primary" type="submit" disabled={loading}>
-              {loading ? 'Guardando...' : 'Cambiar contraseña'}
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
+    <AuthLayout
+      title="Nueva contraseña"
+      subtitle="Elige una contraseña segura para volver a entrar."
+      sideTitle="Actualiza el acceso."
+      sideText="Tu sesión seguirá protegida con refresh cookie y access token en memoria."
+      sideCode="JWT"
+      sideStats={[
+        { label: 'Mínimo', value: '8+' },
+        { label: 'Mayúscula', value: '1' },
+        { label: 'Número', value: '1', tone: 'text-accent' },
+      ]}
+    >
+      {error && <p className="mb-4 rounded border border-red-400/20 bg-red-400/10 px-3 py-2 text-sm text-red-400">{error}</p>}
+      <form onSubmit={handleSubmit}>
+        <AuthField label="Nueva contraseña">
+          <input
+            className={`${authFieldClass} ${fieldErrors.password ? 'border-red-500' : ''}`}
+            type="password"
+            value={password}
+            onChange={(e) => { setPassword(e.target.value); setFieldErrors({}); }}
+            placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número"
+            required
+          />
+        </AuthField>
+        {fieldErrors.password && <p className="-mt-2 mb-3 text-xs text-red-400">{fieldErrors.password}</p>}
+        <AuthField label="Confirmar contraseña">
+          <input
+            className={`${authFieldClass} ${fieldErrors.confirm ? 'border-red-500' : ''}`}
+            type="password"
+            value={confirm}
+            onChange={(e) => { setConfirm(e.target.value); setFieldErrors({}); }}
+            placeholder="Repite la contraseña"
+            required
+          />
+        </AuthField>
+        {fieldErrors.confirm && <p className="-mt-2 mb-3 text-xs text-red-400">{fieldErrors.confirm}</p>}
+        <button className="btn-primary" type="submit" disabled={loading}>
+          {loading ? 'Guardando...' : 'Cambiar contraseña'}
+        </button>
+      </form>
+    </AuthLayout>
   );
 }

@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
@@ -18,17 +18,30 @@ vi.mock('../../../services/competitionService.js', () => ({
     getRoom: vi.fn(),
     joinRoom: vi.fn(),
     submitResult: vi.fn(),
+    updateRoundEvent: vi.fn(),
   },
 }));
 
 vi.mock('../../../services/videoService.js', () => ({
   videoService: {
     requestToken: vi.fn(),
+    reportUsage: vi.fn(),
   },
 }));
 
 vi.mock('../useAgoraRoom.js', () => ({
   useAgoraRoom: vi.fn(),
+}));
+
+const competitionSocketMock = vi.hoisted(() => ({
+  connect: vi.fn(),
+  socket: null,
+}));
+
+vi.mock('../../../services/competitionSocketService.js', () => ({
+  competitionSocketService: {
+    connect: competitionSocketMock.connect,
+  },
 }));
 
 const routerFuture = {
@@ -40,6 +53,7 @@ const competitionRoom = {
   id: 'room-1',
   code: 'ABC123',
   channelName: 'match-test',
+  event: '3x3',
   status: 'active',
   host: { id: '1', username: 'edulumulu' },
   guest: { id: '2', username: 'rival' },
@@ -62,6 +76,18 @@ const readyRoom = {
   token: 'rtc-token',
   uid: 42,
   expiresAt: '2026-06-10T12:00:00.000Z',
+  quota: {
+    limitSeconds: 3600,
+    usedSeconds: 0,
+    remainingSeconds: 3600,
+    resetAt: '2026-07-01T00:00:00.000Z',
+    global: {
+      limitSeconds: 480000,
+      usedSeconds: 0,
+      remainingSeconds: 480000,
+      resetAt: '2026-07-01T00:00:00.000Z',
+    },
+  },
 };
 
 const idleCompetitionState = {
@@ -85,6 +111,37 @@ const readyCompetitionState = {
 let bindRemoteVideo;
 let leaveRtcRoom;
 let agoraRoomState;
+
+function createCompetitionSocket() {
+  const handlers = new Map();
+  const socket = {
+    on: vi.fn((event, handler) => {
+      handlers.set(event, handler);
+      return socket;
+    }),
+    off: vi.fn((event) => {
+      handlers.delete(event);
+      return socket;
+    }),
+    emit: vi.fn((_event, _payload, ack) => {
+      if (ack) ack({ ok: true });
+      return socket;
+    }),
+    connect: vi.fn(() => {
+      handlers.get('connect')?.();
+      return socket;
+    }),
+    disconnect: vi.fn(() => {
+      handlers.clear();
+      return socket;
+    }),
+    trigger(event, payload) {
+      handlers.get(event)?.(payload);
+      return socket;
+    },
+  };
+  return socket;
+}
 
 function mockAgoraRoomState(overrides = {}) {
   agoraRoomState = {
@@ -136,8 +193,22 @@ describe('VideoRoomPage', () => {
     vi.clearAllMocks();
     bindRemoteVideo = vi.fn();
     leaveRtcRoom = vi.fn().mockResolvedValue(undefined);
+    videoService.reportUsage.mockResolvedValue({
+      limitSeconds: 3600,
+      usedSeconds: 0,
+      remainingSeconds: 3600,
+      resetAt: '2026-07-01T00:00:00.000Z',
+      global: {
+        limitSeconds: 480000,
+        usedSeconds: 0,
+        remainingSeconds: 480000,
+        resetAt: '2026-07-01T00:00:00.000Z',
+      },
+    });
     mockAgoraRoomState();
     useAgoraRoom.mockImplementation(() => agoraRoomState);
+    competitionSocketMock.socket = createCompetitionSocket();
+    competitionSocketMock.connect.mockReturnValue(competitionSocketMock.socket);
   });
 
   afterEach(() => {
@@ -148,12 +219,13 @@ describe('VideoRoomPage', () => {
     renderVideoRoom();
 
     expect(screen.getByRole('button', { name: /crear sala/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/cubo/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/código de sala/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /unirse con código/i })).toBeInTheDocument();
-    expect(screen.getByText('Esperando sala de competencia')).toBeInTheDocument();
+    expect(screen.getByText('Sin sala activa')).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Tu cámara' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Rival' })).toBeInTheDocument();
-    expect(screen.getByText('Crea una sala o únete con un código.')).toBeInTheDocument();
+    expect(screen.getByText('Listo para empezar.')).toBeInTheDocument();
     expect(screen.queryByText(/timer local/i)).not.toBeInTheDocument();
   });
 
@@ -167,14 +239,14 @@ describe('VideoRoomPage', () => {
     await user.click(screen.getByRole('button', { name: /crear sala/i }));
 
     await waitFor(() => {
-      expect(competitionService.createRoom).toHaveBeenCalledTimes(1);
+      expect(competitionService.createRoom).toHaveBeenCalledWith({ event: '3x3' });
       expect(videoService.requestToken).toHaveBeenCalledWith({ channelName: 'match-test' });
     });
     expect(await screen.findByTestId('room-code')).toHaveTextContent('ABC123');
-    expect(screen.getByText('Cámara y micrófono conectados a la sala.')).toBeInTheDocument();
+    expect(screen.getByText('Video preparado.')).toBeInTheDocument();
     expect(screen.getByText('En directo')).toBeInTheDocument();
-    expect(screen.getByText('match-test')).toBeInTheDocument();
-    expect(screen.getByText('42')).toBeInTheDocument();
+    expect(screen.getByTestId('room-channel')).toHaveTextContent('match-test');
+    expect(screen.getByTestId('room-uid')).toHaveTextContent('42');
     expect(screen.getByRole('button', { name: /salir de la sala/i })).toBeInTheDocument();
     expect(store.getState().competition).toEqual({
       room: waitingCompetitionRoom,
@@ -188,6 +260,20 @@ describe('VideoRoomPage', () => {
       room: readyRoom,
       status: 'ready',
       error: null,
+    });
+  });
+
+  it('uses the selected cube when creating a competition room', async () => {
+    competitionService.createRoom.mockResolvedValueOnce({ ...waitingCompetitionRoom, event: '2x2' });
+    videoService.requestToken.mockResolvedValueOnce(readyRoom);
+
+    const { user } = renderVideoRoom();
+
+    await user.selectOptions(screen.getByLabelText(/cubo/i), '2x2');
+    await user.click(screen.getByRole('button', { name: /crear sala/i }));
+
+    await waitFor(() => {
+      expect(competitionService.createRoom).toHaveBeenCalledWith({ event: '2x2' });
     });
   });
 
@@ -241,8 +327,18 @@ describe('VideoRoomPage', () => {
 
     await user.click(screen.getByRole('button', { name: /salir de la sala/i }));
 
+    expect(competitionSocketMock.socket.emit).toHaveBeenCalledWith(
+      'competition:join',
+      { code: 'ABC123' },
+      expect.any(Function),
+    );
+    expect(competitionSocketMock.socket.emit).toHaveBeenCalledWith(
+      'competition:leave',
+      { code: 'ABC123' },
+      expect.any(Function),
+    );
     expect(leaveRtcRoom).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('Esperando sala de competencia')).toBeInTheDocument();
+    expect(screen.getByText('Sin sala activa')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /salir de la sala/i })).not.toBeInTheDocument();
     expect(store.getState().competition).toEqual({
       room: null,
@@ -257,6 +353,31 @@ describe('VideoRoomPage', () => {
       status: 'idle',
       error: null,
     });
+  });
+
+  it('leaves the room when the other participant exits', async () => {
+    mockAgoraRoomState({ rtcStatus: 'connected' });
+
+    const { store } = renderVideoRoom({
+      preloadedCompetition: readyCompetitionState,
+      preloadedVideo: { room: readyRoom, status: 'ready', error: null },
+    });
+
+    act(() => {
+      competitionSocketMock.socket.trigger('competition:left', { code: 'ABC123', leftBy: '2' });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Sin sala activa')).toBeInTheDocument();
+    });
+    expect(leaveRtcRoom).toHaveBeenCalledTimes(1);
+    expect(competitionSocketMock.socket.emit).not.toHaveBeenCalledWith(
+      'competition:leave',
+      expect.anything(),
+      expect.any(Function),
+    );
+    expect(store.getState().competition.room).toBeNull();
+    expect(store.getState().video.room).toBeNull();
   });
 
   it('renders a remote user when the Agora room reports a rival stream', () => {
@@ -276,18 +397,17 @@ describe('VideoRoomPage', () => {
     expect(bindRemoteVideo).toHaveBeenCalledWith(7, expect.any(HTMLDivElement));
   });
 
-  it('shows the persistent match score in the active room header', () => {
+  it('shows the persistent match score and event icon in the active room video stage', () => {
     renderVideoRoom({
       preloadedCompetition: readyCompetitionState,
       preloadedVideo: { room: readyRoom, status: 'ready', error: null },
     });
 
     const score = screen.getByTestId('persistent-match-score');
+    expect(screen.getByTestId('active-event-icon')).toHaveAccessibleName('Cubo actual: 3x3');
     expect(score).toHaveAccessibleName('Marcador de la sala: tú 2, rival 1');
     expect(score).toHaveTextContent('2');
     expect(score).toHaveTextContent('1');
-    expect(score).toHaveTextContent('Tú');
-    expect(score).toHaveTextContent('rival');
   });
 
   it('shows competition errors when create or join fails', async () => {
@@ -300,7 +420,7 @@ describe('VideoRoomPage', () => {
     await user.click(screen.getByRole('button', { name: /crear sala/i }));
 
     expect(await screen.findByText('No se pudo crear la sala')).toBeInTheDocument();
-    expect(screen.getByText('Esperando sala de competencia')).toBeInTheDocument();
+    expect(screen.getByText('Sin sala activa')).toBeInTheDocument();
     expect(videoService.requestToken).not.toHaveBeenCalled();
     expect(store.getState().competition).toEqual({
       room: null,
@@ -310,6 +430,73 @@ describe('VideoRoomPage', () => {
       resultStatus: 'idle',
       resultError: null,
     });
+  });
+
+  it('shows the video quota dialog when the monthly free trial is exhausted', async () => {
+    competitionService.createRoom.mockResolvedValueOnce(waitingCompetitionRoom);
+    videoService.requestToken.mockRejectedValueOnce({
+      response: {
+        data: {
+          error: 'Se ha agotado tu prueba gratuita mensual',
+          code: 'VIDEO_QUOTA_EXCEEDED',
+        },
+      },
+    });
+
+    const { user } = renderVideoRoom();
+
+    await user.click(screen.getByRole('button', { name: /crear sala/i }));
+
+    expect(await screen.findByRole('alertdialog', { name: /límite de video alcanzado/i })).toBeInTheDocument();
+    expect(screen.getByText('Se ha agotado tu prueba gratuita mensual')).toBeInTheDocument();
+  });
+
+  it('shows the video quota dialog when the global free quota is exhausted', async () => {
+    competitionService.createRoom.mockResolvedValueOnce(waitingCompetitionRoom);
+    videoService.requestToken.mockRejectedValueOnce({
+      response: {
+        data: {
+          error: 'El cupo gratuito mensual de vídeo se ha agotado temporalmente',
+          code: 'VIDEO_GLOBAL_QUOTA_EXCEEDED',
+        },
+      },
+    });
+
+    const { user } = renderVideoRoom();
+
+    await user.click(screen.getByRole('button', { name: /crear sala/i }));
+
+    expect(await screen.findByRole('alertdialog', { name: /límite de video alcanzado/i })).toBeInTheDocument();
+    expect(screen.getByText('El cupo gratuito mensual de vídeo se ha agotado temporalmente')).toBeInTheDocument();
+  });
+
+  it('disconnects video when reported usage exhausts the global quota', async () => {
+    vi.useFakeTimers();
+    mockAgoraRoomState({ rtcStatus: 'connected' });
+    videoService.reportUsage.mockResolvedValueOnce({
+      limitSeconds: 3600,
+      usedSeconds: 30,
+      remainingSeconds: 3570,
+      resetAt: '2026-07-01T00:00:00.000Z',
+      global: {
+        limitSeconds: 480000,
+        usedSeconds: 480000,
+        remainingSeconds: 0,
+        resetAt: '2026-07-01T00:00:00.000Z',
+      },
+    });
+
+    renderVideoRoom({
+      preloadedCompetition: readyCompetitionState,
+      preloadedVideo: { room: readyRoom, status: 'ready', error: null },
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30000);
+    });
+
+    expect(screen.getByRole('alertdialog', { name: /límite de video alcanzado/i })).toBeInTheDocument();
+    expect(screen.getByText('El cupo gratuito mensual de vídeo se ha agotado temporalmente')).toBeInTheDocument();
   });
 
   it('submits a DNF result from an active competition room', async () => {

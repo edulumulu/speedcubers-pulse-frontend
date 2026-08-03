@@ -34,7 +34,7 @@ test.describe('ranking/profile', () => {
 
     expect((await eventResponse).ok()).toBe(true);
     await expect(page.getByRole('button', { name: '2x2' })).toHaveAttribute('aria-pressed', 'true');
-    await expect(userLinks.first()).toBeVisible();
+    await expect(page.getByText(/aún no hay competidores/i)).toBeVisible();
   });
 
   test('opens a public profile from the ranking', async ({ page }) => {

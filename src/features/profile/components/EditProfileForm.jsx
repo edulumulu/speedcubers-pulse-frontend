@@ -2,6 +2,7 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateMe, linkWca, selectUserLoading } from '../../../store/slices/userSlice.js';
+import { WcaProfileLink } from '../../../components/WcaProfileLink.jsx';
 
 const WCA_ID_REGEX = /^[0-9]{4}[A-Z]{2,}[0-9]{2}$/;
 
@@ -19,9 +20,13 @@ export function EditProfileForm({ me }) {
 
   const [username, setUsername] = useState(me?.username ?? '');
   const [email, setEmail] = useState(me?.email ?? '');
-  const [password, setPassword] = useState('');
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
 
   const [wcaInput, setWcaInput] = useState('');
   const [wcaError, setWcaError] = useState('');
@@ -33,13 +38,42 @@ export function EditProfileForm({ me }) {
     setProfileSuccess('');
     const data = { email };
     if (username !== me?.username) data.username = username;
-    if (password) data.password = password;
     const result = await dispatch(updateMe(data));
     if (updateMe.fulfilled.match(result)) {
       setProfileSuccess('Perfil actualizado correctamente');
-      setPassword('');
     } else {
       setProfileError(result.payload || 'Error al actualizar el perfil');
+    }
+  };
+
+  const closePasswordModal = () => {
+    setShowPasswordModal(false);
+    setPassword('');
+    setPasswordConfirm('');
+    setPasswordError('');
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    if (password.length < 8) {
+      setPasswordError('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+
+    if (password !== passwordConfirm) {
+      setPasswordError('Las contraseñas no coinciden');
+      return;
+    }
+
+    const result = await dispatch(updateMe({ password }));
+    if (updateMe.fulfilled.match(result)) {
+      setPasswordSuccess('Contraseña actualizada correctamente');
+      closePasswordModal();
+    } else {
+      setPasswordError(result.payload || 'Error al cambiar la contraseña');
     }
   };
 
@@ -64,15 +98,12 @@ export function EditProfileForm({ me }) {
   };
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* --- Profile fields --- */}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <h2 className="text-sm font-semibold text-[#e2f0ff]">Datos del perfil</h2>
-
-        <div>
-          <label className="form-label">Nombre de usuario</label>
+    <div className="flex flex-col gap-5">
+      <form onSubmit={handleSubmit} className="grid gap-4">
+        <div className="grid gap-2 border-b border-border/70 pb-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:items-center">
+          <label className="form-label mb-0">Nombre de usuario</label>
           <input
-            className="form-input"
+            className="form-input mb-0"
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -81,10 +112,10 @@ export function EditProfileForm({ me }) {
           />
         </div>
 
-        <div>
-          <label className="form-label">Email</label>
+        <div className="grid gap-2 border-b border-border/70 pb-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:items-center">
+          <label className="form-label mb-0">Email</label>
           <input
-            className="form-input"
+            className="form-input mb-0"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -92,33 +123,44 @@ export function EditProfileForm({ me }) {
           />
         </div>
 
-        <div>
-          <label className="form-label">Nueva contraseña (opcional)</label>
-          <input
-            className="form-input"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Dejar vacío para no cambiar"
-          />
+        <div className="flex flex-col gap-3 rounded-lg border border-border bg-bg p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-[#e2f0ff]">Contraseña</p>
+            <p className="mt-1 text-xs text-muted">Cámbiala solo cuando lo necesites.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setShowPasswordModal(true);
+              setPasswordSuccess('');
+            }}
+            className="btn-secondary w-auto px-4 py-2"
+          >
+            Cambiar contraseña
+          </button>
         </div>
 
         {profileError && <p className="text-sm text-red-400">{profileError}</p>}
         {profileSuccess && <p className="text-sm text-green-400">{profileSuccess}</p>}
+        {passwordSuccess && <p className="text-sm text-green-400">{passwordSuccess}</p>}
 
-        <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? 'Guardando...' : 'Guardar cambios'}
-        </button>
+        <div className="flex justify-end">
+          <button className="btn-primary w-auto px-5" type="submit" disabled={loading}>
+            {loading ? 'Guardando...' : 'Guardar cambios'}
+          </button>
+        </div>
       </form>
 
-      {/* --- WCA ID section --- */}
-      <div className="border-t border-border pt-6">
-        <h2 className="text-sm font-semibold text-[#e2f0ff] mb-4">WCA ID</h2>
+      <div className="border-t border-border pt-5">
+        <h2 className="mb-4 text-sm font-semibold text-[#e2f0ff]">WCA ID</h2>
 
         {me?.wcaId ? (
-          <div className="flex items-center gap-3 bg-surface border border-border rounded-lg px-4 py-3">
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-bg px-4 py-3">
             <span className="text-xs text-muted">WCA ID vinculado:</span>
-            <span className="font-mono text-accent font-medium">{me.wcaId}</span>
+            <WcaProfileLink
+              wcaId={me.wcaId}
+              className="font-mono font-medium text-accent transition-colors hover:text-[#e2f0ff]"
+            />
             <span className="ml-auto text-xs text-muted flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
                 <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
@@ -156,6 +198,53 @@ export function EditProfileForm({ me }) {
           </form>
         )}
       </div>
+
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4" role="dialog" aria-modal="true" aria-labelledby="password-modal-title">
+          <form onSubmit={handlePasswordSubmit} className="w-full max-w-md rounded-lg border border-border-light bg-surface shadow-2xl">
+            <header className="border-b border-border px-5 py-4">
+              <h2 id="password-modal-title" className="text-xl font-bold text-[#e2f0ff]">Cambiar contraseña</h2>
+            </header>
+            <div className="grid gap-4 px-5 py-4">
+              <div>
+                <label className="form-label">Nueva contraseña</label>
+                <input
+                  className="form-input mb-0"
+                  type="password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setPasswordError('');
+                  }}
+                  placeholder="Mínimo 8 caracteres"
+                />
+              </div>
+              <div>
+                <label className="form-label">Confirmar contraseña</label>
+                <input
+                  className="form-input mb-0"
+                  type="password"
+                  value={passwordConfirm}
+                  onChange={(e) => {
+                    setPasswordConfirm(e.target.value);
+                    setPasswordError('');
+                  }}
+                  placeholder="Repite la contraseña"
+                />
+              </div>
+              {passwordError && <p className="text-sm text-red-400">{passwordError}</p>}
+            </div>
+            <div className="flex justify-end gap-3 px-5 pb-5">
+              <button type="button" onClick={closePasswordModal} className="btn-secondary w-auto px-4 py-2">
+                Cancelar
+              </button>
+              <button type="submit" disabled={loading} className="btn-primary w-auto px-4 py-2">
+                {loading ? 'Guardando...' : 'Guardar contraseña'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

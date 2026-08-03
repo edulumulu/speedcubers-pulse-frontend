@@ -5,6 +5,7 @@ import { competitionService } from '../competitionService.js';
 vi.mock('../api.js', () => ({
   default: {
     get: vi.fn(),
+    patch: vi.fn(),
     post: vi.fn(),
   },
 }));
@@ -21,14 +22,16 @@ describe('competitionService', () => {
           roomId: 'room-1',
           roomCode: 'ABC123',
           videoChannelName: 'match-test',
+          event: '2x2',
         },
       },
     });
 
-    await expect(competitionService.createRoom()).resolves.toEqual({
+    await expect(competitionService.createRoom({ event: '2x2' })).resolves.toEqual({
       id: 'room-1',
       code: 'ABC123',
       channelName: 'match-test',
+      event: '2x2',
       status: 'waiting',
       host: null,
       guest: null,
@@ -36,7 +39,7 @@ describe('competitionService', () => {
       latestCompletedRound: null,
       matchScore: null,
     });
-    expect(api.post).toHaveBeenCalledWith('/competitions');
+    expect(api.post).toHaveBeenCalledWith('/competitions', { event: '2x2' });
   });
 
   it('joins a competition room by code and normalizes direct room responses', async () => {
@@ -53,6 +56,7 @@ describe('competitionService', () => {
       id: 'room-2',
       code: 'XYZ789',
       channelName: 'match-two',
+      event: '3x3',
       status: 'active',
       host: null,
       guest: null,
@@ -79,6 +83,7 @@ describe('competitionService', () => {
       id: 'room-2',
       code: 'XYZ789',
       channelName: 'match-two',
+      event: '3x3',
       status: 'active',
       host: null,
       guest: null,
@@ -87,6 +92,29 @@ describe('competitionService', () => {
       matchScore: null,
     });
     expect(api.get).toHaveBeenCalledWith('/competitions/XYZ789');
+  });
+
+  it('updates the active round event and normalizes the room response', async () => {
+    api.patch.mockResolvedValueOnce({
+      data: {
+        competition: {
+          id: 'room-2',
+          code: 'XYZ789',
+          channelName: 'match-two',
+          event: '3x3',
+          status: 'active',
+          activeRound: { id: 'round-1', number: 1, event: '2x2', scramble: 'R U F', status: 'active' },
+        },
+      },
+    });
+
+    await expect(competitionService.updateRoundEvent({ code: 'XYZ789', event: '2x2' })).resolves.toMatchObject({
+      id: 'room-2',
+      code: 'XYZ789',
+      event: '3x3',
+      activeRound: { event: '2x2', scramble: 'R U F' },
+    });
+    expect(api.patch).toHaveBeenCalledWith('/competitions/XYZ789/round/event', { event: '2x2' });
   });
 
   it('submits a competition result and unwraps the result payload', async () => {

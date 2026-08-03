@@ -7,6 +7,7 @@ import competitionReducer, {
   leaveCompetitionRoom,
   refreshCompetitionRoom,
   submitCompetitionResult,
+  updateCompetitionRoundEvent,
 } from '../competitionSlice.js';
 import { competitionService } from '../../../services/competitionService.js';
 
@@ -16,6 +17,7 @@ vi.mock('../../../services/competitionService.js', () => ({
     getRoom: vi.fn(),
     joinRoom: vi.fn(),
     submitResult: vi.fn(),
+    updateRoundEvent: vi.fn(),
   },
 }));
 
@@ -109,7 +111,7 @@ describe('competitionSlice reducers', () => {
 
     await store.dispatch(createCompetitionRoom());
 
-    expect(competitionService.createRoom).toHaveBeenCalledTimes(1);
+    expect(competitionService.createRoom).toHaveBeenCalledWith({ event: '3x3' });
     expect(store.getState().competition).toEqual({
       room,
       status: 'ready',
@@ -117,6 +119,21 @@ describe('competitionSlice reducers', () => {
       result: null,
       resultStatus: 'idle',
       resultError: null,
+    });
+  });
+
+  it('updateCompetitionRoundEvent stores the updated room snapshot', async () => {
+    const nextRoom = { ...room, activeRound: { id: 'round-1', number: 1, event: '2x2', scramble: 'R U F' } };
+    competitionService.updateRoundEvent.mockResolvedValueOnce(nextRoom);
+    const store = makeStore({ room, status: 'ready' });
+
+    await store.dispatch(updateCompetitionRoundEvent({ code: 'ABC123', event: '2x2' }));
+
+    expect(competitionService.updateRoundEvent).toHaveBeenCalledWith({ code: 'ABC123', event: '2x2' });
+    expect(store.getState().competition).toMatchObject({
+      room: nextRoom,
+      status: 'ready',
+      error: null,
     });
   });
 

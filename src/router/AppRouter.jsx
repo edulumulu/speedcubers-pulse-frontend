@@ -9,6 +9,7 @@ import { ProfilePage } from '../features/profile/ProfilePage.jsx';
 import { UserProfilePage } from '../features/profile/UserProfilePage.jsx';
 import { RankingPage } from '../features/ranking/RankingPage.jsx';
 import { PresenceConnection } from '../features/presence/PresenceConnection.jsx';
+import { ChallengePanel } from '../features/challenges/ChallengePanel.jsx';
 import { ProtectedRoute } from './ProtectedRoute.jsx';
 import { GuestRoute } from './GuestRoute.jsx';
 
@@ -21,6 +22,7 @@ export function AppRouter() {
     <>
       <PresenceConnection />
       <Navbar />
+      <ChallengePanel />
       <Routes>
         <Route path="/" element={<RankingPage />} />
         <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />

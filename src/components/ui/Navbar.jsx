@@ -2,6 +2,8 @@ import { Link, NavLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout, selectIsAuthenticated, selectUser } from '../../store/slices/authSlice.js';
 import { selectOnlineUsers, selectPresenceSocketStatus } from '../../store/slices/presenceSlice.js';
+import { presenceSocketService } from '../../services/presenceSocketService.js';
+import { challengeFailed, challengeSending, challengeSent } from '../../store/slices/challengeSlice.js';
 
 export function Navbar() {
   const dispatch = useDispatch();
@@ -10,6 +12,16 @@ export function Navbar() {
   const onlineUsers = useSelector(selectOnlineUsers);
   const presenceStatus = useSelector(selectPresenceSocketStatus);
   const isPresenceLive = presenceStatus === 'connected';
+
+  async function handleChallenge(userId) {
+    dispatch(challengeSending());
+    try {
+      const response = await presenceSocketService.sendChallenge({ challengedUserId: userId, event: '3x3' });
+      if (response.challenge) dispatch(challengeSent(response.challenge));
+    } catch (err) {
+      dispatch(challengeFailed(err.message));
+    }
+  }
 
   return (
     <nav className="flex flex-wrap justify-between items-center gap-3 px-4 sm:px-8 py-4 border-b border-border bg-bg sticky top-0 z-10">
@@ -41,8 +53,17 @@ export function Navbar() {
                 {onlineUsers.length ? (
                   <ul className="flex flex-col gap-1">
                     {onlineUsers.slice(0, 5).map((onlineUser) => (
-                      <li className="text-sm text-[#e2f0ff]" key={onlineUser.id}>
-                        {onlineUser.username}
+                      <li className="flex items-center justify-between gap-3 text-sm text-[#e2f0ff]" key={onlineUser.id}>
+                        <span className="truncate">{onlineUser.username}</span>
+                        {onlineUser.id !== user?.id && (
+                          <button
+                            type="button"
+                            className="rounded border border-border-light px-2 py-1 text-xs text-accent transition-colors hover:border-accent/60"
+                            onClick={() => handleChallenge(onlineUser.id)}
+                          >
+                            Retar
+                          </button>
+                        )}
                       </li>
                     ))}
                   </ul>

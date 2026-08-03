@@ -131,6 +131,38 @@ describe('CompetitionTimerPanel', () => {
     expect(screen.getByTestId('timer-status')).toHaveTextContent('Cronometrando');
   });
 
+  it('renders event choices as visual buttons while the scramble is active', () => {
+    const onChangeRoundEvent = vi.fn();
+
+    render(
+      <CompetitionTimerPanel
+        roomCode="ABC123"
+        activeRound={{ id: 'round-1', number: 1, event: '3x3', scramble: 'R U R\' U\'' }}
+        event="3x3"
+        eventOptions={[
+          { value: '3x3', label: '3x3' },
+          { value: '2x2', label: '2x2' },
+          { value: 'pyraminx', label: 'Pyraminx' },
+        ]}
+        onChangeRoundEvent={onChangeRoundEvent}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByTestId('round-event-select')).not.toBeInTheDocument();
+    const selector = screen.getByRole('group', { name: /seleccionar cubo/i });
+    expect(selector).toBeInTheDocument();
+    expect(selector).toHaveClass('max-h-[76px]');
+    expect(screen.getByRole('button', { name: /competir con 3x3/i })).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.mouseEnter(selector);
+    expect(selector).toHaveClass('max-h-44');
+    fireEvent.click(screen.getByRole('button', { name: /competir con 2x2/i }));
+
+    expect(onChangeRoundEvent).toHaveBeenCalledWith('2x2');
+    expect(selector).toHaveClass('max-h-[76px]');
+  });
+
   it('submits +2 when the solve starts after fifteen seconds of inspection', async () => {
     vi.useFakeTimers();
     let nowValue = 0;
