@@ -49,7 +49,9 @@ describe('RankingTable', () => {
 
   it('shows WCA ID below username when present', () => {
     renderWithProviders(<RankingTable rows={sampleRows} />);
-    expect(screen.getByText('2022TEST01')).toBeInTheDocument();
+    const link = screen.getByRole('link', { name: '2022TEST01' });
+    expect(link).toHaveAttribute('href', 'https://www.worldcubeassociation.org/persons/2022TEST01');
+    expect(link).toHaveAttribute('target', '_blank');
   });
 
   it('shows WCA rank when wca_ranking is available', () => {

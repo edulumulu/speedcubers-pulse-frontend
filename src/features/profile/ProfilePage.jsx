@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { fetchMe, deleteMe, selectMe, selectUserLoading, selectUserError } from '../../store/slices/userSlice.js';
 import { clearAuth } from '../../store/slices/authSlice.js';
 import { EditProfileForm } from './components/EditProfileForm.jsx';
+import { WcaProfileLink } from '../../components/WcaProfileLink.jsx';
 
 export function ProfilePage() {
   const dispatch = useDispatch();
@@ -56,9 +57,12 @@ export function ProfilePage() {
                     {me.username}
                   </span>
                   {me.wcaId && (
-                    <span className="rounded-full border border-border-light bg-bg/70 px-3 py-1 font-mono text-xs text-accent">
+                    <WcaProfileLink
+                      wcaId={me.wcaId}
+                      className="rounded-full border border-border-light bg-bg/70 px-3 py-1 font-mono text-xs text-accent transition-colors hover:border-accent hover:text-[#e2f0ff]"
+                    >
                       WCA {me.wcaId}
-                    </span>
+                    </WcaProfileLink>
                   )}
                   {memberSince && (
                     <span className="rounded-full border border-border-light bg-bg/70 px-3 py-1 text-xs text-muted">
