@@ -105,6 +105,10 @@ export function VideoRoomPage() {
     lastReportedAt: null,
     expired: false,
   });
+  const requestedVideoChannelRef = useRef(null);
+  const competitionSocketRef = useRef(null);
+  const leaveCurrentRoomRef = useRef(null);
+  const leavingRoomRef = useRef(false);
   const {
     localVideoRef,
     remoteUsers,
@@ -227,6 +231,18 @@ export function VideoRoomPage() {
   }, [dispatch, isCompetitionActive, isWaitingForNextRound, roomCode]);
 
   useEffect(() => {
+    if (!competitionRoom?.channelName) return;
+    if (room?.channelName === competitionRoom.channelName || status === 'loading') return;
+    if (requestedVideoChannelRef.current === competitionRoom.channelName) return;
+    requestedVideoChannelRef.current = competitionRoom.channelName;
+    dispatch(requestVideoToken({ channelName: competitionRoom.channelName }));
+  }, [competitionRoom?.channelName, dispatch, room?.channelName, status]);
+
+  useEffect(() => {
+    if (roomCode) leavingRoomRef.current = false;
+  }, [roomCode]);
+
+  useEffect(() => {
     setInspectionStart(null);
   }, [competitionRoom?.activeRound?.id]);
 
@@ -234,10 +250,50 @@ export function VideoRoomPage() {
     if (activeEvent) setSelectedEvent(activeEvent);
   }, [activeEvent]);
 
+  const emitCompetitionLeave = useCallback((socket, code) => new Promise((resolve) => {
+    if (!socket || !code) {
+      resolve();
+      return;
+    }
+
+    const timeoutId = window.setTimeout(resolve, 500);
+    const done = () => {
+      window.clearTimeout(timeoutId);
+      resolve();
+    };
+
+    socket.emit('competition:join', { code }, () => {
+      socket.emit('competition:leave', { code }, done);
+    });
+  }), []);
+
+  const leaveCurrentRoom = useCallback(async ({ notify = false } = {}) => {
+    if (leavingRoomRef.current) return;
+    leavingRoomRef.current = true;
+
+    const currentRoomCode = roomCode;
+    const socket = competitionSocketRef.current;
+
+    if (notify) {
+      await emitCompetitionLeave(socket, currentRoomCode);
+    }
+
+    await reportCurrentVideoUsage();
+    await leaveRtcRoom();
+    dispatch(leaveVideoRoom());
+    dispatch(leaveCompetitionRoom());
+    requestedVideoChannelRef.current = null;
+  }, [dispatch, emitCompetitionLeave, leaveRtcRoom, reportCurrentVideoUsage, roomCode]);
+
+  useEffect(() => {
+    leaveCurrentRoomRef.current = leaveCurrentRoom;
+  }, [leaveCurrentRoom]);
+
   useEffect(() => {
     if (!accessToken || !roomCode || !isCompetitionActive) return undefined;
 
     const socket = competitionSocketService.connect({ token: accessToken });
+    competitionSocketRef.current = socket;
     setCompetitionSocket(socket);
 
     socket.on('connect', () => {
@@ -261,6 +317,10 @@ export function VideoRoomPage() {
       if (payload?.code !== roomCode) return;
       dispatch(refreshCompetitionRoom({ code: roomCode }));
     });
+    socket.on('competition:left', (payload) => {
+      if (payload?.code !== roomCode) return;
+      leaveCurrentRoomRef.current?.();
+    });
     socket.connect();
 
     return () => {
@@ -268,7 +328,9 @@ export function VideoRoomPage() {
       socket.off('competition:inspection:started');
       socket.off('competition:round-final:dismissed');
       socket.off('competition:round:updated');
+      socket.off('competition:left');
       socket.disconnect();
+      if (competitionSocketRef.current === socket) competitionSocketRef.current = null;
       setCompetitionSocket(null);
     };
   }, [accessToken, dispatch, isCompetitionActive, roomCode]);
@@ -279,9 +341,7 @@ export function VideoRoomPage() {
 
   async function openVideoRoom(roomAction) {
     try {
-      const nextRoom = await dispatch(roomAction).unwrap();
-      if (!nextRoom.channelName) return;
-      dispatch(requestVideoToken({ channelName: nextRoom.channelName }));
+      await dispatch(roomAction).unwrap();
     } catch {
       // The rejected thunk stores the visible error in Redux.
     }
@@ -299,10 +359,7 @@ export function VideoRoomPage() {
   }
 
   async function handleLeave() {
-    await reportCurrentVideoUsage();
-    await leaveRtcRoom();
-    dispatch(leaveVideoRoom());
-    dispatch(leaveCompetitionRoom());
+    await leaveCurrentRoom({ notify: true });
   }
 
   async function handleSubmitResult({ timeMs, penalty }) {
@@ -699,7 +756,7 @@ export function VideoRoomPage() {
               </div>
 
               <div
-                className="absolute bottom-4 left-4 z-10 h-20 w-20 text-[#07101a] before:absolute before:-inset-4 before:-z-10 before:rounded-2xl before:bg-[linear-gradient(135deg,rgba(248,250,252,0.82),rgba(226,240,255,0.42)),radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.54),rgba(226,240,255,0)_70%)] before:blur-[9px]"
+                className="absolute bottom-4 left-4 z-10 h-20 w-20 text-[5rem] text-[#07101a] before:absolute before:-inset-4 before:-z-10 before:rounded-2xl before:bg-[linear-gradient(135deg,rgba(248,250,252,0.82),rgba(226,240,255,0.42)),radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.54),rgba(226,240,255,0)_70%)] before:blur-[9px]"
                 aria-label={`Cubo actual: ${EVENT_OPTIONS.find((option) => option.value === activeEvent)?.label ?? activeEvent}`}
                 data-testid="active-event-icon"
               >

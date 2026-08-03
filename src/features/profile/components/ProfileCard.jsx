@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 
-export function ProfileCard({ profile }) {
+export function ProfileCard({ profile, canChallenge = false, isOnline = false, onChallenge }) {
   if (!profile) return null;
 
   const memberSince = profile.createdAt
@@ -38,9 +38,19 @@ export function ProfileCard({ profile }) {
               )}
             </div>
           </div>
-          <a href="/compete" className="btn-secondary w-auto px-4 py-2">
-            Retar
-          </a>
+          <div className="grid gap-2 justify-items-end">
+            <span className={`text-xs ${isOnline ? 'text-green-400' : 'text-muted'}`}>
+              {isOnline ? 'Online' : 'Offline'}
+            </span>
+            <button
+              type="button"
+              className="btn-secondary w-auto px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!canChallenge}
+              onClick={onChallenge}
+            >
+              Retar
+            </button>
+          </div>
         </header>
 
         <div className="grid gap-4 p-5 sm:grid-cols-2">
@@ -129,5 +139,9 @@ ProfileCard.propTypes = {
       name: PropTypes.string,
       country: PropTypes.string,
     }),
+    id: PropTypes.string,
   }),
+  canChallenge: PropTypes.bool,
+  isOnline: PropTypes.bool,
+  onChallenge: PropTypes.func,
 };
