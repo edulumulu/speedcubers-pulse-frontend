@@ -2,6 +2,7 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateMe, linkWca, selectUserLoading } from '../../../store/slices/userSlice.js';
+import { WcaProfileLink } from '../../../components/WcaProfileLink.jsx';
 
 const WCA_ID_REGEX = /^[0-9]{4}[A-Z]{2,}[0-9]{2}$/;
 
@@ -156,7 +157,10 @@ export function EditProfileForm({ me }) {
         {me?.wcaId ? (
           <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-bg px-4 py-3">
             <span className="text-xs text-muted">WCA ID vinculado:</span>
-            <span className="font-mono text-accent font-medium">{me.wcaId}</span>
+            <WcaProfileLink
+              wcaId={me.wcaId}
+              className="font-mono font-medium text-accent transition-colors hover:text-[#e2f0ff]"
+            />
             <span className="ml-auto text-xs text-muted flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
                 <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />

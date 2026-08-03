@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { WcaProfileLink } from '../../components/WcaProfileLink.jsx';
 
 const EVENT_LABELS = {
   '3x3': '3x3',
@@ -86,9 +87,14 @@ function PlayerIdentity({ row }) {
         >
           {row.username}
         </a>
-        <p className="truncate text-xs text-muted md:text-[0.82rem]">
-          {row.wca_id || 'Sin WCA vinculado'}
-        </p>
+        {row.wca_id ? (
+          <WcaProfileLink
+            wcaId={row.wca_id}
+            className="block truncate text-xs text-muted transition-colors hover:text-accent md:text-[0.82rem]"
+          />
+        ) : (
+          <p className="truncate text-xs text-muted md:text-[0.82rem]">Sin WCA vinculado</p>
+        )}
       </div>
     </div>
   );
@@ -133,9 +139,16 @@ function RankingRow({ row }) {
       </div>
 
       <div className="hidden text-right md:block">
-        <p className={row.wca_ranking ? 'text-base font-semibold text-blue-400' : 'text-base text-muted'}>
-          {wcaRank}
-        </p>
+        {row.wca_ranking && row.wca_id ? (
+          <WcaProfileLink
+            wcaId={row.wca_id}
+            className="inline-block text-base font-semibold text-blue-400 transition-colors hover:text-accent"
+          >
+            {wcaRank}
+          </WcaProfileLink>
+        ) : (
+          <p className="text-base text-muted">{wcaRank}</p>
+        )}
       </div>
 
       <div className="col-span-2 col-start-2 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted md:hidden">

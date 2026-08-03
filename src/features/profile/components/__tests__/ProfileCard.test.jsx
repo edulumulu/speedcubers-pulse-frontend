@@ -14,7 +14,9 @@ describe('ProfileCard', () => {
 
   it('renders WCA ID when present', () => {
     render(<ProfileCard profile={{ username: 'alice', wcaId: '2022LUCA04' }} />);
-    expect(screen.getByText('2022LUCA04')).toBeInTheDocument();
+    const links = screen.getAllByRole('link', { name: /2022LUCA04/i });
+    expect(links[0]).toHaveAttribute('href', 'https://www.worldcubeassociation.org/persons/2022LUCA04');
+    expect(links[0]).toHaveAttribute('target', '_blank');
   });
 
   it('does not render WCA ID section when wcaId is null', () => {

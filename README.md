@@ -1,115 +1,141 @@
-# 🎨 SpeedCubers Pulse - Frontend
+# SpeedCubers Pulse - Frontend
 
-React 18 frontend for SpeedCubers Pulse platform.
+Frontend React/Vite de SpeedCubers Pulse: ranking, perfiles, presencia online, retos directos y sala de competición 1v1 con vídeo.
 
-## 🚀 Quick Start
+Este repositorio forma parte del proyecto de TFM. La documentación de entrega está centralizada en:
 
-### Prerequisites
+- https://github.com/edulumulu/speedcubers-pulse-docs
+- [README de entrega](../speedcubers-pulse-docs/README.md)
+
+## Demo
+
+| Recurso | URL |
+|---|---|
+| Aplicación staging/demo | https://speedcubers-pulse-frontend.vercel.app |
+| Backend staging/demo | https://speedcubers-pulse-backend-production.up.railway.app |
+
+## Stack
+
+- React 18
+- Vite 7
+- Redux Toolkit
+- React Router 6
+- Tailwind CSS 3
+- Axios
+- Socket.io client
+- Agora Web SDK
+- `@cubing/icons`
+- Vitest + React Testing Library
+- Playwright
+- Vercel staging/demo
+
+## Funcionalidades frontend
+
+- Registro, login, logout y restauración de sesión.
+- Ranking por categorías de cubo.
+- Perfiles públicos y perfil privado.
+- Lista de usuarios online.
+- Retos directos desde navbar y perfil público.
+- Popup de reto recibido, esperando respuesta, cancelar, aceptar y rechazar.
+- Sala de competición 1v1 con cámara local/remota.
+- Selector visual de tipo de cubo.
+- Scramble compartido.
+- Inspección sincronizada.
+- Timer local por competidor.
+- Envío de resultado con `OK`, `+2` y `DNF`.
+- Marcador de rondas.
+- Límite de vídeo y mensajes de cuota agotada.
+
+## Instalación local
+
+### Requisitos
+
 - Node.js 20.x
-- npm or yarn
+- npm
+- Backend local arrancado en `http://localhost:3000`
 
-### Installation
+### Setup inicial
 
 ```bash
-# Clone repository
 git clone https://github.com/edulumulu/speedcubers-pulse-frontend.git
 cd speedcubers-pulse-frontend
-
-# Install dependencies
 npm install
-
-# Copy environment file
 cp .env.example .env
-
-# Start development server
 npm run dev
 ```
 
-App runs on `http://localhost:5173`
+Aplicación local: `http://localhost:5173`
 
-## 📖 Documentation
+## Usuarios de prueba
 
-- **Architecture & Design**: See [SPEEDCUBERS_SPAIN_PROJECT_SPEC.md](../speedcubers-pulse-docs/SPEEDCUBERS_SPAIN_PROJECT_SPEC.md)
-- **Execution Standards**: See [PROFESSIONAL_EXECUTION_GUIDE.md](../speedcubers-pulse-docs/PROFESSIONAL_EXECUTION_GUIDE.md)
-- **UI Components**: Shared components live in `src/components/`
+Tras cargar fixtures en backend:
 
-## ✅ Testing
+| Usuario | Email | Contraseña |
+|---|---|---|
+| `edulumulu` | `edu@edu.com` | `Abcd1234` |
+| `margallego` | `mar@mar.com` | `Abcd1234` |
 
-```bash
-npm test              # All tests
-npm run test:watch   # Watch mode
-npm run test:coverage # Coverage report
+Para probar retos directos o competición 1v1, usa dos navegadores o una ventana normal/incógnito con usuarios distintos.
+
+## Variables de entorno
+
+Consulta `.env.example`, `.env.develop.example` y `.env.production.example`.
+
+Variables principales:
+
+```env
+VITE_API_URL=http://localhost:3000/api/v1
+VITE_SOCKET_URL=http://localhost:3000
+VITE_AGORA_APP_ID=
 ```
 
-Target: >80% coverage
+No añadir secretos al frontend. En concreto, nunca usar `VITE_AGORA_APP_CERTIFICATE`.
 
-## 🎨 Styling
+## Scripts
 
-- **Framework**: Tailwind CSS 3.x
-- **Components**: Custom shared components in `src/components/`
+| Comando | Descripción |
+|---|---|
+| `npm run dev` | Servidor Vite local |
+| `npm test` | Tests unitarios/componentes |
+| `npm run test:watch` | Tests en watch mode |
+| `npm run test:coverage` | Cobertura |
+| `npm run test:e2e` | Playwright E2E |
+| `npm run test:e2e:debug` | Playwright en modo debug |
+| `npm run build` | Build producción |
+| `npm run preview` | Preview del build |
 
-## 📦 Tech Stack
+## Estructura
 
-- **Framework**: React 18.x
-- **Build Tool**: Vite 7.x
-- **Router**: React Router 6.x
-- **State Management**: Redux Toolkit
-- **HTTP Client**: Axios
-- **Real-time**: Socket.io client
-- **Video**: Agora React SDK (planned Phase 4)
-- **Testing**: Vitest + React Testing Library
-
-## 🏗️ Project Structure
-```
+```text
 src/
-├── components/      # Shared UI components
-├── features/        # Feature modules: auth, profile, ranking
-├── router/          # React Router config and route guards
-├── services/        # API clients and external services
-├── store/           # Redux store and slices
-├── styles/          # Global styles
-└── App.jsx          # Main app component
+├── components/          # Componentes UI compartidos
+├── features/
+│   ├── auth/            # Login, registro, recuperación
+│   ├── challenges/      # Popup global de retos directos
+│   ├── presence/        # Socket lifecycle y online users
+│   ├── profile/         # Perfil privado/público
+│   ├── ranking/         # Ranking por eventos
+│   ├── timer/           # Timer e inspección
+│   └── video/           # Sala 1v1 y Agora
+├── router/              # Rutas y guards
+├── services/            # API clients y sockets
+├── store/               # Redux slices
+├── styles/              # CSS global/Tailwind
+└── App.jsx
 ```
 
-## 🔄 Git Workflow
+## Despliegue
 
-See [PROFESSIONAL_EXECUTION_GUIDE.md](../speedcubers-pulse-docs/PROFESSIONAL_EXECUTION_GUIDE.md) for:
-- Conventional Commits
-- Branch naming
-- Pull Request process
+- Proveedor actual staging/demo: Vercel Hobby.
+- Rama de despliegue: `develop`.
+- Build command: `npm run build`.
+- Output: `dist`.
+- Configuración: `vercel.json`.
 
-## 🚀 Deployment
+## Documentación relacionada
 
-Development: `npm run dev`  
-Build: `npm run build`  
-Preview build: `npm run preview`
-
-Production deployment via GitHub Actions on `main` branch with tag `v*`
-
-## 📋 Roadmap
-
-- Phase 0: Setup ✅ (complete)
-- Phase 1: Authentication ✅
-- Phase 2: User Profiles ✅
-- Phase 3: Rankings + leaderboard ✅
-- Phase 4: Video calling with Agora.io (next)
-- [See full roadmap in SPEEDCUBERS_SPAIN_PROJECT_SPEC.md](../speedcubers-pulse-docs/SPEEDCUBERS_SPAIN_PROJECT_SPEC.md#plan-de-fases)
-
-## 👨‍💻 Contributing
-
-1. Create feature branch: `git checkout -b feature/my-feature`
-2. Make changes following code standards
-3. Run tests: `npm test`
-4. Commit: `git commit -m "feat(scope): description"`
-5. Push: `git push origin feature/my-feature`
-6. Create Pull Request
-
-## 📞 Questions?
-
-Open an issue in this repository.
-
----
-
-**Status**: Development (Fases 0, 1, 2 y 3 completas; próxima Fase 4)
-**Version**: 0.1.0  
-**Last Updated**: 2026-06-10
+- [README de entrega](../speedcubers-pulse-docs/README.md)
+- [Especificación completa](../speedcubers-pulse-docs/SPEEDCUBERS_SPAIN_PROJECT_SPEC.md)
+- [Guía profesional](../speedcubers-pulse-docs/PROFESSIONAL_EXECUTION_GUIDE.md)
+- [Plan de staging/demo](../speedcubers-pulse-docs/STAGING_DEPLOYMENT_PLAN.md)
+- [Plan de entrega TFM](../speedcubers-pulse-docs/TFM_DELIVERY_PLAN.md)

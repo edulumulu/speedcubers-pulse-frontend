@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { WcaProfileLink } from '../../../components/WcaProfileLink.jsx';
 
 export function ProfileCard({ profile, canChallenge = false, isOnline = false, onChallenge }) {
   if (!profile) return null;
@@ -26,10 +27,13 @@ export function ProfileCard({ profile, canChallenge = false, isOnline = false, o
             <h1 className="truncate text-4xl font-extrabold leading-none text-[#e2f0ff]">{profile.username}</h1>
             <div className="mt-4 flex flex-wrap gap-2">
               {profile.wcaId && (
-                <span className="inline-flex items-center gap-2 rounded-full border border-border-light bg-bg/70 px-3 py-1 font-mono text-xs text-accent">
+                <WcaProfileLink
+                  wcaId={profile.wcaId}
+                  className="inline-flex items-center gap-2 rounded-full border border-border-light bg-bg/70 px-3 py-1 font-mono text-xs text-accent transition-colors hover:border-accent hover:text-[#e2f0ff]"
+                >
                   {countryFlag && <span className="font-sans text-sm">{countryFlag}</span>}
                   WCA {profile.wcaId}
-                </span>
+                </WcaProfileLink>
               )}
               {memberSince && (
                 <span className="rounded-full border border-border-light bg-bg/70 px-3 py-1 text-xs text-muted">
@@ -108,7 +112,10 @@ export function ProfileCard({ profile, canChallenge = false, isOnline = false, o
               {profile.wcaId && (
                 <div className="flex justify-between gap-3">
                   <span className="text-muted">ID</span>
-                  <strong className="font-mono text-accent">{profile.wcaId}</strong>
+                  <WcaProfileLink
+                    wcaId={profile.wcaId}
+                    className="font-mono font-bold text-accent transition-colors hover:text-[#e2f0ff]"
+                  />
                 </div>
               )}
             </div>
