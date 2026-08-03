@@ -139,9 +139,16 @@ function RankingRow({ row }) {
       </div>
 
       <div className="hidden text-right md:block">
-        <p className={row.wca_ranking ? 'text-base font-semibold text-blue-400' : 'text-base text-muted'}>
-          {wcaRank}
-        </p>
+        {row.wca_ranking && row.wca_id ? (
+          <WcaProfileLink
+            wcaId={row.wca_id}
+            className="inline-block text-base font-semibold text-blue-400 transition-colors hover:text-accent"
+          >
+            {wcaRank}
+          </WcaProfileLink>
+        ) : (
+          <p className="text-base text-muted">{wcaRank}</p>
+        )}
       </div>
 
       <div className="col-span-2 col-start-2 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted md:hidden">

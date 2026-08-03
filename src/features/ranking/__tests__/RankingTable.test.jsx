@@ -59,6 +59,13 @@ describe('RankingTable', () => {
     expect(screen.getByText('#32,158')).toBeInTheDocument();
   });
 
+  it('links WCA rank to WCA profile when wca_id is available', () => {
+    renderWithProviders(<RankingTable rows={sampleRows} />);
+    const link = screen.getByRole('link', { name: '#32,158' });
+    expect(link).toHaveAttribute('href', 'https://www.worldcubeassociation.org/persons/2022TEST01');
+    expect(link).toHaveAttribute('target', '_blank');
+  });
+
   it('shows dash when wca_ranking is null', () => {
     renderWithProviders(<RankingTable rows={sampleRows} />);
     const dashes = screen.getAllByText('—');
