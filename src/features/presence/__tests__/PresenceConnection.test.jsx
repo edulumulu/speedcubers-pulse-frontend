@@ -1,9 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { Provider } from 'react-redux';
+import { MemoryRouter } from 'react-router-dom';
 import { render, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import authReducer from '../../../store/slices/authSlice.js';
 import presenceReducer from '../../../store/slices/presenceSlice.js';
+import competitionReducer from '../../../store/slices/competitionSlice.js';
+import challengeReducer from '../../../store/slices/challengeSlice.js';
 import { PresenceConnection } from '../PresenceConnection.jsx';
 import { presenceService } from '../../../services/presenceService.js';
 import { presenceSocketService } from '../../../services/presenceSocketService.js';
@@ -31,7 +34,12 @@ function makeSocket() {
 
 function renderConnection(accessToken = 'token-1') {
   const store = configureStore({
-    reducer: { auth: authReducer, presence: presenceReducer },
+    reducer: {
+      auth: authReducer,
+      presence: presenceReducer,
+      competition: competitionReducer,
+      challenge: challengeReducer,
+    },
     preloadedState: {
       auth: {
         user: { id: '1', username: 'alice' },
@@ -41,6 +49,8 @@ function renderConnection(accessToken = 'token-1') {
         error: null,
       },
       presence: { users: [], status: 'idle', socketStatus: 'idle', error: null },
+      competition: { room: null, status: 'idle', error: null, result: null, resultStatus: 'idle', resultError: null },
+      challenge: { incoming: null, outgoing: null, status: 'idle', error: null, notice: null },
     },
   });
 
@@ -48,7 +58,9 @@ function renderConnection(accessToken = 'token-1') {
     store,
     ...render(
       <Provider store={store}>
-        <PresenceConnection />
+        <MemoryRouter>
+          <PresenceConnection />
+        </MemoryRouter>
       </Provider>,
     ),
   };
@@ -71,6 +83,9 @@ describe('PresenceConnection', () => {
     });
     expect(socket.on).toHaveBeenCalledWith('presence:online', expect.any(Function));
     expect(socket.on).toHaveBeenCalledWith('presence:offline', expect.any(Function));
+    expect(socket.on).toHaveBeenCalledWith('challenge:received', expect.any(Function));
+    expect(socket.on).toHaveBeenCalledWith('challenge:accepted', expect.any(Function));
+    expect(socket.on).toHaveBeenCalledWith('challenge:cancelled', expect.any(Function));
   });
 
   it('disconnects the socket on cleanup', async () => {

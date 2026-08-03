@@ -33,6 +33,17 @@ vi.mock('../useAgoraRoom.js', () => ({
   useAgoraRoom: vi.fn(),
 }));
 
+const competitionSocketMock = vi.hoisted(() => ({
+  connect: vi.fn(),
+  socket: null,
+}));
+
+vi.mock('../../../services/competitionSocketService.js', () => ({
+  competitionSocketService: {
+    connect: competitionSocketMock.connect,
+  },
+}));
+
 const routerFuture = {
   v7_startTransition: true,
   v7_relativeSplatPath: true,
@@ -101,6 +112,37 @@ let bindRemoteVideo;
 let leaveRtcRoom;
 let agoraRoomState;
 
+function createCompetitionSocket() {
+  const handlers = new Map();
+  const socket = {
+    on: vi.fn((event, handler) => {
+      handlers.set(event, handler);
+      return socket;
+    }),
+    off: vi.fn((event) => {
+      handlers.delete(event);
+      return socket;
+    }),
+    emit: vi.fn((_event, _payload, ack) => {
+      if (ack) ack({ ok: true });
+      return socket;
+    }),
+    connect: vi.fn(() => {
+      handlers.get('connect')?.();
+      return socket;
+    }),
+    disconnect: vi.fn(() => {
+      handlers.clear();
+      return socket;
+    }),
+    trigger(event, payload) {
+      handlers.get(event)?.(payload);
+      return socket;
+    },
+  };
+  return socket;
+}
+
 function mockAgoraRoomState(overrides = {}) {
   agoraRoomState = {
     localVideoRef: { current: null },
@@ -165,6 +207,8 @@ describe('VideoRoomPage', () => {
     });
     mockAgoraRoomState();
     useAgoraRoom.mockImplementation(() => agoraRoomState);
+    competitionSocketMock.socket = createCompetitionSocket();
+    competitionSocketMock.connect.mockReturnValue(competitionSocketMock.socket);
   });
 
   afterEach(() => {
@@ -283,6 +327,16 @@ describe('VideoRoomPage', () => {
 
     await user.click(screen.getByRole('button', { name: /salir de la sala/i }));
 
+    expect(competitionSocketMock.socket.emit).toHaveBeenCalledWith(
+      'competition:join',
+      { code: 'ABC123' },
+      expect.any(Function),
+    );
+    expect(competitionSocketMock.socket.emit).toHaveBeenCalledWith(
+      'competition:leave',
+      { code: 'ABC123' },
+      expect.any(Function),
+    );
     expect(leaveRtcRoom).toHaveBeenCalledTimes(1);
     expect(screen.getByText('Sin sala activa')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /salir de la sala/i })).not.toBeInTheDocument();
@@ -299,6 +353,31 @@ describe('VideoRoomPage', () => {
       status: 'idle',
       error: null,
     });
+  });
+
+  it('leaves the room when the other participant exits', async () => {
+    mockAgoraRoomState({ rtcStatus: 'connected' });
+
+    const { store } = renderVideoRoom({
+      preloadedCompetition: readyCompetitionState,
+      preloadedVideo: { room: readyRoom, status: 'ready', error: null },
+    });
+
+    act(() => {
+      competitionSocketMock.socket.trigger('competition:left', { code: 'ABC123', leftBy: '2' });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Sin sala activa')).toBeInTheDocument();
+    });
+    expect(leaveRtcRoom).toHaveBeenCalledTimes(1);
+    expect(competitionSocketMock.socket.emit).not.toHaveBeenCalledWith(
+      'competition:leave',
+      expect.anything(),
+      expect.any(Function),
+    );
+    expect(store.getState().competition.room).toBeNull();
+    expect(store.getState().video.room).toBeNull();
   });
 
   it('renders a remote user when the Agora room reports a rival stream', () => {

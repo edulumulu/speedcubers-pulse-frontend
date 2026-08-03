@@ -97,6 +97,14 @@ const competitionSlice = createSlice({
       state.error = null;
       state.resultError = null;
     },
+    competitionRoomReceived(state, action) {
+      state.room = action.payload;
+      state.status = 'ready';
+      state.error = null;
+      state.result = null;
+      state.resultStatus = 'idle';
+      state.resultError = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -172,7 +180,11 @@ const competitionSlice = createSlice({
   },
 });
 
-export const { leaveCompetitionRoom, clearCompetitionError } = competitionSlice.actions;
+export const {
+  leaveCompetitionRoom,
+  clearCompetitionError,
+  competitionRoomReceived,
+} = competitionSlice.actions;
 export default competitionSlice.reducer;
 
 export const selectCompetitionRoom = (state) => state.competition.room;

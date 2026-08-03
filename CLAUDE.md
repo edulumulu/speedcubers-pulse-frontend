@@ -2,7 +2,7 @@
 
 Red social para speedcubers españoles: competencias 1v1 en tiempo real con videoconferencia, rankings y presencia online. Proyecto de Fin de Master — MVP en 8 semanas.
 
-**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B, 6, 7A, 7B-1, 7B-2, 7B-3, 7C-1, 7C-2A, 7C-2B, 7D-1, 7D-2, 7D-3, 7E-1, 7E-2, 7E-3, 7F-1, 7F-2, 8A, 8B-1, 8B-2 y 9 completadas. Siguiente foco: retos directos entre usuarios.
+**Estado actual**: Fases 0, 1, 2, 3, 4C, 5A, 5B, 6, 7A, 7B-1, 7B-2, 7B-3, 7C-1, 7C-2A, 7C-2B, 7D-1, 7D-2, 7D-3, 7E-1, 7E-2, 7E-3, 7F-1, 7F-2, 8A, 8B-1, 8B-2, 9 y 10 completadas. Siguiente foco: validación funcional completa de staging.
 
 ## Arquitectura
 
@@ -18,6 +18,7 @@ src/
     profile/       # User profile, WCA data
     video/          # Waiting room and Agora RTC flow
     presence/       # Socket.io lifecycle for online presence
+    challenges/     # Direct user challenge panel
   components/      # Shared UI components (Button, Modal, etc.)
   hooks/           # Shared hooks (useSocket, useAuth, etc.)
   store/           # Redux Toolkit slices + selectors
@@ -26,7 +27,7 @@ src/
   utils/           # Pure helpers
 ```
 
-**Redux Toolkit** para estado global (auth, ranking, competition, video, presence). Estado local de componentes con `useState`/`useReducer`. No mezclar: si el estado no se comparte entre features, va local.
+**Redux Toolkit** para estado global (auth, ranking, competition, video, presence, challenge). Estado local de componentes con `useState`/`useReducer`. No mezclar: si el estado no se comparte entre features, va local.
 
 **Decisión crítica**: el timer corre 100% en el cliente. La inspección se sincroniza por Socket.io, pero cada competidor inicia y para su solve localmente. El resultado se envía al backend al validar `OK`, `+2` o `DNF`; el servidor valida el rango (0–600s), persiste el resultado en la ronda activa, resuelve la ronda cuando ambos usuarios envían y devuelve el estado necesario para mostrar resumen, marcador y siguiente mezcla — no confiar en respuestas del servidor para el tick del timer.
 
@@ -142,9 +143,10 @@ npm run lint:fix     # Auto-fix
 - **Forgot/Reset password**: `ForgotPasswordPage` (anti-enumeración, siempre muestra éxito) y `ResetPasswordPage` (lee `?token=` de la URL, valida contraseña + confirmación, redirige a `/login` con mensaje de éxito).
 - **WCA ID inmutable en perfil**: `EditProfileForm` muestra el WCA ID vinculado como solo lectura con icono de candado. Si no hay WCA ID, muestra input con validación de formato antes de llamar al backend.
 - **Video room** (`src/features/video/VideoRoomPage.jsx`): ruta protegida `/compete`, crea o une sala mediante `competitionService`, solicita token RTC a `POST /video/token` con el `channelName` de backend, entra al canal con Agora Web SDK, publica cámara/micrófono, renderiza preview local y stream remoto. El lobby de entrada usa controles claros para crear/unirse, resumen descriptivo, preview de cámaras y datos técnicos separados mientras espera rival. Cuando la sala está `active`, cambia a vista tipo videollamada con rival como vídeo principal, cámara propia flotante, detalles técnicos plegados, marcador persistente superpuesto al vídeo, icono del cubo activo sobre el stage y timer en panel lateral. El selector visual de cubo vive en la pantalla de mezcla, se colapsa a una fila para priorizar el scramble y actualiza el evento de la ronda activa para ambos competidores antes de empezar la inspección. La respuesta del token incluye `quota` de usuario y `quota.global` del proyecto; la sala reporta segundos consumidos a `POST /video/usage`, corta RTC si se agota cualquiera de las dos cuotas y muestra un diálogo distinto para límite individual o cupo global agotado.
-- **Competition socket** (`src/services/competitionSocketService.js`): conexión Socket.io autenticada para `competition:join`, `competition:inspection:start`, `competition:round:changed` y `competition:round-final:dismiss`. Sincroniza inicio de inspección, refresco de ronda y paso conjunto a marcador/nueva mezcla.
+- **Competition socket** (`src/services/competitionSocketService.js`): conexión Socket.io autenticada para `competition:join`, `competition:inspection:start`, `competition:round:changed`, `competition:round-final:dismiss` y `competition:leave`. Sincroniza inicio de inspección, refresco de ronda, paso conjunto a marcador/nueva mezcla y salida conjunta de la sala.
 - **Competition timer** (`src/features/timer/CompetitionTimerPanel.jsx`): timer local con `performance.now()`. El flujo activo es `mezcla → inspección → solve → revisión → resultado de ronda → marcador acumulado → nueva mezcla`. `Tab` o barra espaciadora inician inspección desde mezcla; el inicio de inspección se sincroniza para ambos competidores. La cuenta avisa en 8s y 12s, aplica `+2` si el solve empieza entre 15s y 17s, envía DNF automático después de 17s y permite acumular `+4` si también se pulsa `+2` manual. El resultado de ronda queda fijo hasta que un participante confirma, después ambos ven marcador acumulado durante 2s y la siguiente mezcla queda bloqueada 9s antes de poder iniciar inspección.
-- **Presence connection** (`src/features/presence/PresenceConnection.jsx`): conecta Socket.io cuando existe `accessToken`, envía heartbeat cada 30s, recibe eventos `presence:online`/`presence:offline` y actualiza `presenceSlice`.
+- **Presence connection** (`src/features/presence/PresenceConnection.jsx`): conecta Socket.io cuando existe `accessToken`, envía heartbeat cada 30s, recibe eventos `presence:online`/`presence:offline` y actualiza `presenceSlice`. También escucha retos directos `challenge:*`, guarda la sala aceptada en `competitionSlice` y navega a `/compete`.
+- **Direct challenges** (`src/features/challenges/ChallengePanel.jsx`, `challengeSlice`): permite retar desde perfil público o lista online del navbar. El retado ve panel aceptar/rechazar; el retador ve estado de espera y puede cancelar la invitación pendiente. Al aceptar, ambos usuarios reciben la sala 1v1 activa por Socket.io y la vista de competición solicita token RTC para el `channelName`.
 - **Playwright auth/session E2E** (`e2e/flows/auth-session.spec.js`): registra un usuario único, valida sesión tras recarga por `POST /auth/refresh`, confirma que no hay tokens en `localStorage`/`sessionStorage`, prueba logout, redirección protegida y login posterior.
 - **Playwright ranking/profile E2E** (`e2e/flows/ranking-profile.spec.js`): valida ranking público, filtro de evento `2x2`, enlace a perfil público y ausencia de email privado.
 - **Playwright competition 1v1 E2E** (`e2e/flows/competition-1v1.spec.js`): registra dos usuarios únicos, crea sala, une rival por código, usa RTC fake solo en E2E, envía resultados de ambos participantes y valida resolución de ronda y apertura de ronda 2.
@@ -204,6 +206,7 @@ Usa la skill `/pre-push` para que Claude lo ejecute automáticamente.
 | 8B-1 | Configuración frontend para staging/demo Vercel Hobby | ✅ |
 | 8B-2 | Validación real Vercel/Railway y URLs develop | ✅ |
 | 9 | Megaminx y FTO en selector, ranking e iconos | ✅ |
+| 10 | Retos directos desde perfil/lista online con panel global y navegación a sala | ✅ |
 | 7 | Integración, e2e, polish | — |
 | 8 | Deployment (Railway/Vercel) | — |
 

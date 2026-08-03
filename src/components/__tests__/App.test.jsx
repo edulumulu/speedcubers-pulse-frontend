@@ -8,6 +8,7 @@ import rankingReducer from '../../store/slices/rankingSlice.js';
 import competitionReducer from '../../store/slices/competitionSlice.js';
 import videoReducer from '../../store/slices/videoSlice.js';
 import presenceReducer from '../../store/slices/presenceSlice.js';
+import challengeReducer from '../../store/slices/challengeSlice.js';
 import { AppRouter } from '../../router/AppRouter.jsx';
 import { vi } from 'vitest';
 
@@ -44,6 +45,7 @@ const makeStore = (authOverrides = {}) =>
       competition: competitionReducer,
       video: videoReducer,
       presence: presenceReducer,
+      challenge: challengeReducer,
     },
     preloadedState: {
       auth: { user: null, accessToken: null, refreshToken: null, loading: false, bootstrapped: true, error: null, ...authOverrides },
@@ -52,6 +54,7 @@ const makeStore = (authOverrides = {}) =>
       competition: { room: null, status: 'idle', error: null },
       video: { room: null, status: 'idle', error: null },
       presence: { users: [], status: 'idle', socketStatus: 'idle', error: null },
+      challenge: { incoming: null, outgoing: null, status: 'idle', error: null },
     },
   });
 
